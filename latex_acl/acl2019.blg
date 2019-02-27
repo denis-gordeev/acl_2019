@@ -1,0 +1,9 @@
+[0] Config.pm:354> INFO - This is Biber 2.7
+[0] Config.pm:357> INFO - Logfile is 'acl2019.blg'
+[23] biber:303> INFO - === Ср фев 27, 2019, 17:29:55
+[37] Biber.pm:359> INFO - Reading 'acl2019.bcf'
+[96] Biber.pm:835> INFO - Found 23 citekeys in bib section 0
+[107] Biber.pm:3670> INFO - Processing section 0
+[116] Biber.pm:3840> INFO - Looking for bibtex format file 'references.bib' for section 0
+[139] Utils.pm:180> ERROR - Cannot find 'references.bib'!
+[139] Biber.pm:113> INFO - ERRORS: 1
