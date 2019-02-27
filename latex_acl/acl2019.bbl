@@ -1,0 +1,886 @@
+% $ biblatex auxiliary file $
+% $ biblatex bbl format version 2.8 $
+% Do not modify the above lines!
+%
+% This is an auxiliary file used by the 'biblatex' package.
+% This file may safely be deleted. It will be recreated by
+% biber as required.
+%
+\begingroup
+\makeatletter
+\@ifundefined{ver@biblatex.sty}
+  {\@latex@error
+     {Missing 'biblatex' package}
+     {The bibliography requires the 'biblatex' package.}
+      \aftergroup\endinput}
+  {}
+\endgroup
+
+
+\refsection{0}
+  \sortlist[entry]{none/global/}
+    \entry{bengio}{article}{}
+      \name{author}{3}{}{%
+        {{hash=419350ebbeb4eba5351469f378dee007}{%
+           family={Bengio},
+           familyi={B\bibinitperiod},
+           given={Y},
+           giveni={Y\bibinitperiod}}}%
+        {{hash=1bc15829cd16e63196a7e6c41d2a2fdd}{%
+           family={Ducharme},
+           familyi={D\bibinitperiod},
+           given={R},
+           giveni={R\bibinitperiod}}}%
+        {{hash=95a0bd269d8e105592dd653d1335e97a}{%
+           family={Vincent},
+           familyi={V\bibinitperiod},
+           given={P},
+           giveni={P\bibinitperiod}}}%
+      }
+      \strng{namehash}{696a1fc8f76f88162ddf810d89c77a06}
+      \strng{fullhash}{696a1fc8f76f88162ddf810d89c77a06}
+      \strng{authornamehash}{696a1fc8f76f88162ddf810d89c77a06}
+      \strng{authorfullhash}{696a1fc8f76f88162ddf810d89c77a06}
+      \field{sortinit}{1}
+      \field{sortinithash}{27a2bc5dfb9ed0a0422134d636544b5d}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{issn}{ISSN 1533-7928}
+      \field{journaltitle}{Journal of Machine Learning Research}
+      \field{title}{{A neural probabilistic language model}}
+      \field{volume}{3}
+      \field{year}{2003}
+      \field{pages}{1137\bibrangedash 1155}
+      \range{pages}{19}
+      \verb{file}
+      \verb :home/denis/.local/share/data/Mendeley Ltd./Mendeley Desktop/Downloaded/Bengio et al. - Unknown - A neural probabilistic language model.pdf:pdf
+      \endverb
+      \verb{url}
+      \verb http://www.jmlr.org/papers/v3/bengio03a.html
+      \endverb
+      \keyw{artificial neural networks,curse of dimensionality,distributed representation,statistical language modeling}
+    \endentry
+    \entry{mikolov-representations-2013}{article}{}
+      \name{author}{4}{}{%
+        {{hash=a2d359b12ca2fadf0b40136a73f021bb}{%
+           family={Mikolov},
+           familyi={M\bibinitperiod},
+           given={Tomas},
+           giveni={T\bibinitperiod}}}%
+        {{hash=ee3f7d7b96add98106db907e189d6c13}{%
+           family={Chen},
+           familyi={C\bibinitperiod},
+           given={Kai},
+           giveni={K\bibinitperiod}}}%
+        {{hash=3d11e6f2a0d0a1183b2cf62996525afc}{%
+           family={Corrado},
+           familyi={C\bibinitperiod},
+           given={Greg},
+           giveni={G\bibinitperiod}}}%
+        {{hash=4aecfb0cc2e1e3b7899129fa2a94e2b8}{%
+           family={Dean},
+           familyi={D\bibinitperiod},
+           given={Jeffrey},
+           giveni={J\bibinitperiod}}}%
+      }
+      \strng{namehash}{ed4d154f6ad724ee86e4b498231228f3}
+      \strng{fullhash}{f24c60896b6daa69474b40efb61f4e88}
+      \strng{authornamehash}{ed4d154f6ad724ee86e4b498231228f3}
+      \strng{authorfullhash}{f24c60896b6daa69474b40efb61f4e88}
+      \field{sortinit}{2}
+      \field{sortinithash}{0aa614ace9f3a40ef5a67e7f7a184048}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{abstract}{The recently introduced continuous Skip-gram model is an efficient method for learning high-quality distributed vector representations that capture a large num- ber of precise syntactic and semantic word relationships. In this paper we present several extensions that improve both the quality of the vectors and the training speed. By subsampling of the frequent words we obtain significant speedup and also learn more regular word representations. We also describe a simple alterna- tive to the hierarchical softmax called negative sampling. An inherent limitation of word representations is their indifference to word order and their inability to represent idiomatic phrases. For example, the meanings of “Canada” and “Air” cannot be easily combined to obtain “Air Canada”. Motivated by this example,we present a simplemethod for finding phrases in text, and show that learning good vector representations for millions of phrases is possible.}
+      \field{eprinttype}{arXiv}
+      \field{issn}{10495258}
+      \field{journaltitle}{Nips}
+      \field{title}{{Distributed Representations of Words and Phrases and their Compositionality}}
+      \field{year}{2013}
+      \field{pages}{3111\bibrangedash 3119}
+      \range{pages}{9}
+      \verb{doi}
+      \verb 10.1162/jmlr.2003.3.4-5.951
+      \endverb
+      \verb{eprint}
+      \verb 1310.4546
+      \endverb
+      \keyw{specom-17}
+    \endentry
+    \entry{levy-goldberg-2015}{article}{}
+      \name{author}{3}{}{%
+        {{hash=038965e189161e03f6255a4278c280a1}{%
+           family={Levy},
+           familyi={L\bibinitperiod},
+           given={Omer},
+           giveni={O\bibinitperiod}}}%
+        {{hash=33b00f3e2f4f1bb310f1cf8d4a4c500a}{%
+           family={Goldberg},
+           familyi={G\bibinitperiod},
+           given={Yoav},
+           giveni={Y\bibinitperiod}}}%
+        {{hash=adce67a1db6abfebdde96d99c65a3de1}{%
+           family={Dagan},
+           familyi={D\bibinitperiod},
+           given={Ido},
+           giveni={I\bibinitperiod}}}%
+      }
+      \strng{namehash}{8258acdf2e297a58b16657fba6f1dc37}
+      \strng{fullhash}{8258acdf2e297a58b16657fba6f1dc37}
+      \strng{authornamehash}{8258acdf2e297a58b16657fba6f1dc37}
+      \strng{authorfullhash}{8258acdf2e297a58b16657fba6f1dc37}
+      \field{sortinit}{3}
+      \field{sortinithash}{197da6d6c34c6b20ce45c4d4baace5a4}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{abstract}{Recent trends suggest that neural-network-inspired word embedding models outperform traditional count-based distri-butional models on word similarity and analogy detection tasks. We reveal that much of the performance gains of word embeddings are due to certain system design choices and hyperparameter op-timizations, rather than the embedding algorithms themselves. Furthermore, we show that these modifications can be transferred to traditional distributional models, yielding similar gains. In contrast to prior reports, we observe mostly local or insignificant performance differences between the methods, with no global advantage to any single approach over the others.}
+      \field{eprinttype}{arXiv}
+      \field{issn}{2307-387X}
+      \field{journaltitle}{Transactions of the Association for Computational Linguistics}
+      \field{title}{{Improving Distributional Similarity with Lessons Learned from Word Embeddings}}
+      \field{volume}{3}
+      \field{year}{2015}
+      \field{pages}{211\bibrangedash 225}
+      \range{pages}{15}
+      \verb{doi}
+      \verb 10.1186/1472-6947-15-S2-S2
+      \endverb
+      \verb{eprint}
+      \verb 1103.0398
+      \endverb
+      \verb{file}
+      \verb :home/denis/.local/share/data/Mendeley Ltd./Mendeley Desktop/Downloaded/Levy et al. - Unknown - Improving distributional similarity with lessons learned from word embeddings.pdf:pdf
+      \endverb
+      \verb{url}
+      \verb https://www.transacl.org/ojs/index.php/tacl/article/view/570
+      \endverb
+    \endentry
+    \entry{ruder-survey}{article}{}
+      \name{author}{3}{}{%
+        {{hash=b468248a20d75c52ee742f4592c2569f}{%
+           family={Ruder},
+           familyi={R\bibinitperiod},
+           given={Sebastian},
+           giveni={S\bibinitperiod}}}%
+        {{hash=9fa17331489449c86886282786aa6111}{%
+           family={Vulić},
+           familyi={V\bibinitperiod},
+           given={Ivan},
+           giveni={I\bibinitperiod}}}%
+        {{hash=b874f93d29ad9151e52501b113f21077}{%
+           family={S{ø}gaard},
+           familyi={S\bibinitperiod},
+           given={Anders},
+           giveni={A\bibinitperiod}}}%
+      }
+      \strng{namehash}{823573a0cfb7c1ae01940a315de4099e}
+      \strng{fullhash}{823573a0cfb7c1ae01940a315de4099e}
+      \strng{authornamehash}{823573a0cfb7c1ae01940a315de4099e}
+      \strng{authorfullhash}{823573a0cfb7c1ae01940a315de4099e}
+      \field{sortinit}{4}
+      \field{sortinithash}{d221becdd544034cf9082056cd6e6d2d}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{abstract}{Cross-lingual representations of words enable us to reason about word meaning in multilingual contexts and are a key facilitator of cross-lingual transfer when developing natural language processing models for low-resource languages. In this survey, we provide a comprehensive typology of cross-lingual word embedding models. We compare their data requirements and objective functions. The recurring theme of the survey is that many of the models presented in the literature optimize for the same objectives, and that seemingly different models are often equivalent modulo optimization strategies, hyper-parameters, and such. We also discuss the different ways cross-lingual word embeddings are evaluated, as well as future challenges and research horizons.}
+      \field{eprinttype}{arXiv}
+      \field{month}{6}
+      \field{title}{{A Survey Of Cross-lingual Word Embedding Models}}
+      \field{year}{2017}
+      \verb{eprint}
+      \verb 1706.04902
+      \endverb
+      \verb{file}
+      \verb :home/denis/.local/share/data/Mendeley Ltd./Mendeley Desktop/Downloaded/Ruder, Vuli{\'{c}}, S{ø}gaard - 2017 - A Survey Of Cross-lingual Word Embedding Models.pdf:pdf
+      \endverb
+      \verb{url}
+      \verb http://arxiv.org/abs/1706.04902
+      \endverb
+    \endentry
+    \entry{muse}{article}{}
+      \name{author}{5}{}{%
+        {{hash=7cf7ac6a9456559cc67ee138c7f21cec}{%
+           family={Conneau},
+           familyi={C\bibinitperiod},
+           given={Alexis},
+           giveni={A\bibinitperiod}}}%
+        {{hash=56509a94ba6cdaf0c71304d6cf806cee}{%
+           family={Lample},
+           familyi={L\bibinitperiod},
+           given={Guillaume},
+           giveni={G\bibinitperiod}}}%
+        {{hash=6d93a2b5e4e1f368f5ffe4344bfec8ef}{%
+           family={Ranzato},
+           familyi={R\bibinitperiod},
+           given={Marc'Aurelio},
+           giveni={M\bibinitperiod}}}%
+        {{hash=5f4a46100c59d9155cd97615e18cfb53}{%
+           family={Denoyer},
+           familyi={D\bibinitperiod},
+           given={Ludovic},
+           giveni={L\bibinitperiod}}}%
+        {{hash=a2329be98a372037fcb95334bdc0c720}{%
+           family={Jégou},
+           familyi={J\bibinitperiod},
+           given={Hervé},
+           giveni={H\bibinitperiod}}}%
+      }
+      \strng{namehash}{948c39679f0b471719439377215f0235}
+      \strng{fullhash}{31e1284ca0ce62897f08fb938fef6860}
+      \strng{authornamehash}{948c39679f0b471719439377215f0235}
+      \strng{authorfullhash}{31e1284ca0ce62897f08fb938fef6860}
+      \field{sortinit}{5}
+      \field{sortinithash}{c9df3c9fb8f555dd9201cedc5e343021}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{abstract}{State-of-the-art methods for learning cross-lingual word embeddings have relied on bilingual dictionaries or parallel corpora. Recent studies showed that the need for parallel data supervision can be alleviated with character-level information. While these methods showed encouraging results, they are not on par with their supervised counterparts and are limited to pairs of languages sharing a common alphabet. In this work, we show that we can build a bilingual dictionary between two languages without using any parallel corpora, by aligning monolingual word embedding spaces in an unsupervised way. Without using any character information, our model even outperforms existing supervised methods on cross-lingual tasks for some language pairs. Our experiments demonstrate that our method works very well also for distant language pairs, like English-Russian or English-Chinese. We finally describe experiments on the English-Esperanto low-resource language pair, on which there only exists a limited amount of parallel data, to show the potential impact of our method in fully unsupervised machine translation. Our code, embeddings and dictionaries are publicly available.}
+      \field{eprinttype}{arXiv}
+      \field{month}{10}
+      \field{title}{{Word Translation Without Parallel Data}}
+      \field{year}{2017}
+      \verb{eprint}
+      \verb 1710.04087
+      \endverb
+      \verb{file}
+      \verb :home/denis/.local/share/data/Mendeley Ltd./Mendeley Desktop/Downloaded/Conneau et al. - 2017 - Word Translation Without Parallel Data.pdf:pdf
+      \endverb
+      \verb{url}
+      \verb http://arxiv.org/abs/1710.04087
+      \endverb
+    \endentry
+    \entry{vecmap}{article}{}
+      \name{author}{3}{}{%
+        {{hash=b1280147e284a598ae233c3c17f86b27}{%
+           family={Artetxe},
+           familyi={A\bibinitperiod},
+           given={Mikel},
+           giveni={M\bibinitperiod}}}%
+        {{hash=d95d0b3054d0f0d4023b649d3b6bb0fa}{%
+           family={Labaka},
+           familyi={L\bibinitperiod},
+           given={Gorka},
+           giveni={G\bibinitperiod}}}%
+        {{hash=39f0a6a48ac08d60ef7340dad900caa8}{%
+           family={Agirre},
+           familyi={A\bibinitperiod},
+           given={Eneko},
+           giveni={E\bibinitperiod}}}%
+      }
+      \strng{namehash}{8a9fab07eb6d619a7f7eab219141f424}
+      \strng{fullhash}{8a9fab07eb6d619a7f7eab219141f424}
+      \strng{authornamehash}{8a9fab07eb6d619a7f7eab219141f424}
+      \strng{authorfullhash}{8a9fab07eb6d619a7f7eab219141f424}
+      \field{sortinit}{6}
+      \field{sortinithash}{02bbed3ed82f61ae046619460488516d}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{abstract}{Recent work has managed to learn cross-lingual word embeddings without parallel data by mapping monolingual embeddings to a shared space through adversarial training. However, their evaluation has focused on favorable conditions, using comparable corpora or closely-related languages, and we show that they often fail in more realistic scenarios. This work proposes an alternative approach based on a fully unsupervised initialization that explicitly exploits the structural similarity of the embeddings, and a robust self-learning algorithm that iteratively improves this solution. Our method succeeds in all tested scenarios and obtains the best published results in standard datasets, even surpassing previous supervised systems. Our implementation is released as an open source project at https://github.com/artetxem/vecmap}
+      \field{eprinttype}{arXiv}
+      \field{month}{5}
+      \field{title}{{A robust self-learning method for fully unsupervised cross-lingual mappings of word embeddings}}
+      \field{year}{2018}
+      \verb{eprint}
+      \verb 1805.06297
+      \endverb
+      \verb{file}
+      \verb :home/denis/.local/share/data/Mendeley Ltd./Mendeley Desktop/Downloaded/Artetxe, Labaka, Agirre - 2018 - A robust self-learning method for fully unsupervised cross-lingual mappings of word embeddings.pdf:pdf
+      \endverb
+      \verb{url}
+      \verb http://arxiv.org/abs/1805.06297
+      \endverb
+    \endentry
+    \entry{ruder-muse-limitations}{article}{}
+      \name{author}{3}{}{%
+        {{hash=b874f93d29ad9151e52501b113f21077}{%
+           family={S{ø}gaard},
+           familyi={S\bibinitperiod},
+           given={Anders},
+           giveni={A\bibinitperiod}}}%
+        {{hash=b468248a20d75c52ee742f4592c2569f}{%
+           family={Ruder},
+           familyi={R\bibinitperiod},
+           given={Sebastian},
+           giveni={S\bibinitperiod}}}%
+        {{hash=9fa17331489449c86886282786aa6111}{%
+           family={Vulić},
+           familyi={V\bibinitperiod},
+           given={Ivan},
+           giveni={I\bibinitperiod}}}%
+      }
+      \strng{namehash}{284c2ca2cb082876603f04c07a7a7037}
+      \strng{fullhash}{284c2ca2cb082876603f04c07a7a7037}
+      \strng{authornamehash}{284c2ca2cb082876603f04c07a7a7037}
+      \strng{authorfullhash}{284c2ca2cb082876603f04c07a7a7037}
+      \field{sortinit}{7}
+      \field{sortinithash}{6ac7fe70cdec8cba8f65694411ce2532}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{abstract}{Unsupervised machine translation---i.e., not assuming any cross-lingual supervision signal, whether a dictionary, translations, or comparable corpora---seems impossible, but nevertheless, Lample et al. (2018) recently proposed a fully unsupervised machine translation (MT) model. The model relies heavily on an adversarial, unsupervised alignment of word embedding spaces for bilingual dictionary induction (Conneau et al., 2018), which we examine here. Our results identify the limitations of current unsupervised MT: unsupervised bilingual dictionary induction performs much worse on morphologically rich languages that are not dependent marking, when monolingual corpora from different domains or different embedding algorithms are used. We show that a simple trick, exploiting a weak supervision signal from identical words, enables more robust induction, and establish a near-perfect correlation between unsupervised bilingual dictionary induction performance and a previously unexplored graph similarity metric.}
+      \field{eprinttype}{arXiv}
+      \field{month}{5}
+      \field{title}{{On the Limitations of Unsupervised Bilingual Dictionary Induction}}
+      \field{year}{2018}
+      \verb{eprint}
+      \verb 1805.03620
+      \endverb
+      \verb{file}
+      \verb :home/denis/.local/share/data/Mendeley Ltd./Mendeley Desktop/Downloaded/S{\o}gaard, Ruder, Vulić - 2018 - On the Limitations of Unsupervised Bilingual Dictionary Induction.pdf:pdf
+      \endverb
+      \verb{url}
+      \verb http://arxiv.org/abs/1805.03620
+      \endverb
+    \endentry
+    \entry{unsd}{misc}{}
+      \field{sortinit}{8}
+      \field{sortinithash}{2f1b0e69e7617f99664f1cd00bb9603c}
+      \field{labeltitlesource}{title}
+      \field{title}{{UNSD — National Classifications}}
+      \field{urlday}{11}
+      \field{urlmonth}{9}
+      \field{urlyear}{2018}
+      \field{urldateera}{ce}
+      \verb{url}
+      \verb https://unstats.un.org/unsd/classifications/nationalclassifications/
+      \endverb
+    \endentry
+    \entry{dinu}{inproceedings}{}
+      \name{author}{3}{}{%
+        {{hash=ae781f5d08ccad40b8a4e1b1e10c0310}{%
+           family={Dinu},
+           familyi={D\bibinitperiod},
+           given={Georgiana},
+           giveni={G\bibinitperiod}}}%
+        {{hash=b0043f5019798bc00d72a3e082bbf4fa}{%
+           family={Lazaridou},
+           familyi={L\bibinitperiod},
+           given={Angeliki},
+           giveni={A\bibinitperiod}}}%
+        {{hash=06fd48b6938d182f11c5bf4e2da76f87}{%
+           family={Baroni},
+           familyi={B\bibinitperiod},
+           given={Marco},
+           giveni={M\bibinitperiod}}}%
+      }
+      \strng{namehash}{5a2aa8bccdb43506bfdd3521a5830e46}
+      \strng{fullhash}{5a2aa8bccdb43506bfdd3521a5830e46}
+      \strng{authornamehash}{5a2aa8bccdb43506bfdd3521a5830e46}
+      \strng{authorfullhash}{5a2aa8bccdb43506bfdd3521a5830e46}
+      \field{sortinit}{1}
+      \field{sortinithash}{27a2bc5dfb9ed0a0422134d636544b5d}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{abstract}{The zero-shot paradigm exploits vector-based word representations extracted from text corpora with unsupervised methods to learn general mapping functions from other feature spaces onto word space, where the words associated to the nearest neighbours of the mapped vectors are used as their linguistic labels. We show that the neighbourhoods of the mapped elements are strongly polluted by hubs, vectors that tend to be near a high proportion of items, pushing their correct labels down the neighbour list. After illustrating the problem empirically, we propose a simple method to correct it by taking the proximity distribution of potential neighbours across many mapped vectors into account. We show that this correction leads to consistent improvements in realistic zero-shot experiments in the cross-lingual, image labeling and image retrieval domains.}
+      \field{booktitle}{In Proceedings of the 3rd In- ternational Conference on Learning Representations (ICLR2015), workshop track}
+      \field{eprinttype}{arXiv}
+      \field{month}{12}
+      \field{title}{{Improving zero-shot learning by mitigating the hubness problem}}
+      \field{year}{2015}
+      \verb{eprint}
+      \verb 1412.6568
+      \endverb
+      \verb{file}
+      \verb :home/denis/.local/share/data/Mendeley Ltd./Mendeley Desktop/Downloaded/Dinu, Lazaridou, Baroni - 2014 - Improving zero-shot learning by mitigating the hubness problem.pdf:pdf
+      \endverb
+      \verb{url}
+      \verb http://arxiv.org/abs/1412.6568
+      \endverb
+    \endentry
+    \entry{jawanpuria}{article}{}
+      \name{author}{4}{}{%
+        {{hash=0095c000d99d39f7f8f790d510f2ae60}{%
+           family={Jawanpuria},
+           familyi={J\bibinitperiod},
+           given={Pratik},
+           giveni={P\bibinitperiod}}}%
+        {{hash=ddc0f21f283538a96b9fb1503155d56d}{%
+           family={Balgovind},
+           familyi={B\bibinitperiod},
+           given={Arjun},
+           giveni={A\bibinitperiod}}}%
+        {{hash=f9d74242d4f01616604741e5cab07f4b}{%
+           family={Kunchukuttan},
+           familyi={K\bibinitperiod},
+           given={Anoop},
+           giveni={A\bibinitperiod}}}%
+        {{hash=4c1b56723248e01272459ed277cc4435}{%
+           family={Mishra},
+           familyi={M\bibinitperiod},
+           given={Bamdev},
+           giveni={B\bibinitperiod}}}%
+      }
+      \strng{namehash}{42b7eae56f127e3f8d3500910766819d}
+      \strng{fullhash}{7b48429e48e2cac7f22f3695038535b3}
+      \strng{authornamehash}{42b7eae56f127e3f8d3500910766819d}
+      \strng{authorfullhash}{7b48429e48e2cac7f22f3695038535b3}
+      \field{sortinit}{1}
+      \field{sortinithash}{27a2bc5dfb9ed0a0422134d636544b5d}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{abstract}{We propose a novel geometric approach for learning bilingual mappings given monolingual embeddings and a bilingual dictionary. Our approach decouples learning the transformation from the source language to the target language into (a) learning rotations for language-specific embeddings to align them to a common space, and (b) learning a similarity metric in the common space to model similarities between the embeddings. We model the bilingual mapping problem as an optimization problem on smooth Riemannian manifolds. We show that our approach outperforms previous approaches on the bilingual lexicon induction and cross-lingual word similarity tasks. We also generalize our framework to represent multiple languages in a common latent space. In particular, the latent space representations for several languages are learned jointly, given bilingual dictionaries for multiple language pairs. We illustrate the effectiveness of joint learning for multiple languages in zero-shot word translation setting.}
+      \field{eprinttype}{arXiv}
+      \field{month}{8}
+      \field{title}{{Learning Multilingual Word Embeddings in Latent Metric Space: A Geometric Approach}}
+      \field{year}{2018}
+      \verb{eprint}
+      \verb 1808.08773
+      \endverb
+      \verb{file}
+      \verb :home/denis/.local/share/data/Mendeley Ltd./Mendeley Desktop/Downloaded/Jawanpuria et al. - 2018 - Learning Multilingual Word Embeddings in Latent Metric Space A Geometric Approach.pdf:pdf
+      \endverb
+      \verb{url}
+      \verb http://arxiv.org/abs/1808.08773
+      \endverb
+    \endentry
+    \entry{bilda}{article}{}
+      \name{author}{3}{}{%
+        {{hash=9fa17331489449c86886282786aa6111}{%
+           family={Vulić},
+           familyi={V\bibinitperiod},
+           given={Ivan},
+           giveni={I\bibinitperiod}}}%
+        {{hash=a3c20ec7afda27dc2d7f456cafcc655b}{%
+           family={Smet},
+           familyi={S\bibinitperiod},
+           given={Wim},
+           giveni={W\bibinitperiod},
+           prefix={de},
+           prefixi={d\bibinitperiod}}}%
+        {{hash=2f03b52571bb5e650ac0371164053e50}{%
+           family={Moens},
+           familyi={M\bibinitperiod},
+           given={Marie\bibnamedelima Francine},
+           giveni={M\bibinitperiod\bibinitdelim F\bibinitperiod}}}%
+      }
+      \list{publisher}{1}{%
+        {Springer Netherlands}%
+      }
+      \strng{namehash}{0e9cf266b35a46079850d07a07152871}
+      \strng{fullhash}{0e9cf266b35a46079850d07a07152871}
+      \strng{authornamehash}{0e9cf266b35a46079850d07a07152871}
+      \strng{authorfullhash}{0e9cf266b35a46079850d07a07152871}
+      \field{sortinit}{1}
+      \field{sortinithash}{27a2bc5dfb9ed0a0422134d636544b5d}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{abstract}{In this paper, we study different applications of cross-language latent topic models trained on comparable corpora. The first focus lies on the task of cross-language information retrieval (CLIR). The Bilingual Latent Dirichlet allocation model (BiLDA) allows us to create an interlingual, language-independent representation of both queries and documents. We construct several BiLDA-based document models for CLIR, where no additional translation resources are used. The second focus lies on the methods for extracting translation candidates and semantically related words using only per-topic word distributions of the cross-language latent topic model. As the main contribution, we combine the two former steps, blending the evidences from the per-document topic dis- tributions and the per-topic word distributions of the topic model with the knowledge from the extracted lexicon. We design and evaluate the novel evidence-rich statistical model for CLIR, and prove that such a model, which combines various (only internal) evidences, obtains the best scores for experiments performed on the standard test collections of the CLEF 2001–2003 campaigns. We confirm these findings in an alternative evaluation, where we automatically generate queries and perform the known-item search on a test subset of Wikipedia articles. The main importance of this work lies in the fact that we train translation resources from comparable document-aligned corpora and provide novel CLIR statistical models that exhaustively exploit as many cross-lingual clues as possible in the quest for better CLIR results, without use of any additional external resources such as parallel corpora or machine-readable dictionaries.}
+      \field{isbn}{1079101292}
+      \field{issn}{13864564}
+      \field{journaltitle}{Information Retrieval}
+      \field{month}{6}
+      \field{number}{3}
+      \field{title}{{Cross-language information retrieval models based on latent topic models trained with document-aligned comparable corpora}}
+      \field{volume}{16}
+      \field{year}{2013}
+      \field{pages}{331\bibrangedash 368}
+      \range{pages}{38}
+      \verb{doi}
+      \verb 10.1007/s10791-012-9200-5
+      \endverb
+      \verb{file}
+      \verb :home/denis/.local/share/data/Mendeley Ltd./Mendeley Desktop/Downloaded/Vuli{\'{c}}, De Smet, Moens - 2013 - Cross-language information retrieval models based on latent topic models trained with document-aligned c.pdf:pdf
+      \endverb
+      \verb{url}
+      \verb http://link.springer.com/10.1007/s10791-012-9200-5
+      \endverb
+      \keyw{Cross-language information retrieval,Evidence-rich retrieval models,Probabilistic latent topic models,Unsupervised cross-language lexicon extraction}
+    \endentry
+    \entry{short-lda}{inproceedings}{}
+      \name{author}{5}{}{%
+        {{hash=46f04db5d325ad2c7e5718489245046a}{%
+           family={Yan},
+           familyi={Y\bibinitperiod},
+           given={Xiaohui},
+           giveni={X\bibinitperiod}}}%
+        {{hash=3a4015314b36f50d72a43c8fb03ca87e}{%
+           family={Guo},
+           familyi={G\bibinitperiod},
+           given={Jiafeng},
+           giveni={J\bibinitperiod}}}%
+        {{hash=e5e801b19b6adda7a71efdadca039f87}{%
+           family={Liu},
+           familyi={L\bibinitperiod},
+           given={Shenghua},
+           giveni={S\bibinitperiod}}}%
+        {{hash=48dc8864d7a369badfb5b1b7dab6f4fa}{%
+           family={Cheng},
+           familyi={C\bibinitperiod},
+           given={Xueqi},
+           giveni={X\bibinitperiod}}}%
+        {{hash=b5b3a5c892da0161ccfb138059007bb8}{%
+           family={Wang},
+           familyi={W\bibinitperiod},
+           given={Yanfeng},
+           giveni={Y\bibinitperiod}}}%
+      }
+      \list{location}{1}{%
+        {Philadelphia, PA}%
+      }
+      \list{publisher}{2}{%
+        {Society for Industrial}%
+        {Applied Mathematics}%
+      }
+      \strng{namehash}{52df4c2ee260dd8e14a04499732699bb}
+      \strng{fullhash}{58e1c07519eb3443ba7328dd0f774e3c}
+      \strng{authornamehash}{52df4c2ee260dd8e14a04499732699bb}
+      \strng{authorfullhash}{58e1c07519eb3443ba7328dd0f774e3c}
+      \field{sortinit}{1}
+      \field{sortinithash}{27a2bc5dfb9ed0a0422134d636544b5d}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{abstract}{Nowadays, short texts are very prevalent in various web applications, such as microblogs, instant messages. The severe sparsity of short texts hinders existing topic models to learn reliable topics. In this paper, we propose a novel way to tackle this problem. The key idea is to learn topics by exploring term correlation data, rather than the high-dimensional and sparse term occurrence information in documents. Such term correlation data is less sparse and more stable with the increase of the collection size, and can well capture the necessary information for topic learning. To obtain reliable topics from term correlation data, we first introduce a novel way to compute term correlation in short texts by representing each term with its co-occurred terms. Then we formulated the topic learning problem as symmetric non-negative matrix factorization on the term correlation matrix. After learning the topics, we can easily infer the topics of documents. Experimental results on three data sets show that our method provides substantially better performance than the baseline methods.}
+      \field{booktitle}{Proceedings of the 2013 SIAM International Conference on Data Mining}
+      \field{isbn}{9781611972627}
+      \field{issn}{9781611972627}
+      \field{month}{5}
+      \field{title}{{Learning Topics in Short Texts by Non-negative Matrix Factorization on Term Correlation Matrix}}
+      \field{year}{2013}
+      \field{pages}{749\bibrangedash 757}
+      \range{pages}{9}
+      \verb{doi}
+      \verb 10.1137/1.9781611972832.83
+      \endverb
+      \verb{url}
+      \verb http://epubs.siam.org/doi/abs/10.1137/1.9781611972832.83
+      \endverb
+    \endentry
+    \entry{maslova-potapov}{inproceedings}{}
+      \name{author}{2}{}{%
+        {{hash=ac7440c4fb0e3e20a5a16ccb53f2efde}{%
+           family={Maslova},
+           familyi={M\bibinitperiod},
+           given={Natalia},
+           giveni={N\bibinitperiod}}}%
+        {{hash=36200c158e526b8badc633832da6a8da}{%
+           family={Potapov},
+           familyi={P\bibinitperiod},
+           given={Vsevolod},
+           giveni={V\bibinitperiod}}}%
+      }
+      \strng{namehash}{a19af2b3c1161f57da5f45a6f24351dd}
+      \strng{fullhash}{a19af2b3c1161f57da5f45a6f24351dd}
+      \strng{authornamehash}{a19af2b3c1161f57da5f45a6f24351dd}
+      \strng{authorfullhash}{a19af2b3c1161f57da5f45a6f24351dd}
+      \field{sortinit}{1}
+      \field{sortinithash}{27a2bc5dfb9ed0a0422134d636544b5d}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{booktitle}{Lecture Notes in Computer Science}
+      \field{isbn}{9783319664286}
+      \field{issn}{16113349}
+      \field{title}{{Neural network doc2vec in automated sentiment analysis for short informal texts}}
+      \field{volume}{10458 LNAI}
+      \field{year}{2017}
+      \field{pages}{546\bibrangedash 554}
+      \range{pages}{9}
+      \verb{doi}
+      \verb 10.1007/978-3-319-66429-3_54
+      \endverb
+      \verb{url}
+      \verb http://link.springer.com/10.1007/978-3-319-66429-3%7B%5C_%7D54
+      \endverb
+      \keyw{Automated sentiment analysis,Deprivation,Russian,Social network discourse,Supervised learning,Word embeddings}
+    \endentry
+    \entry{wiki-nigp}{misc}{}
+      \field{sortinit}{1}
+      \field{sortinithash}{27a2bc5dfb9ed0a0422134d636544b5d}
+      \field{labeltitlesource}{title}
+      \field{title}{{NIGP Code - Wikipedia}}
+      \field{urlday}{31}
+      \field{urlmonth}{8}
+      \field{urlyear}{2018}
+      \field{urldateera}{ce}
+      \verb{url}
+      \verb https://en.wikipedia.org/wiki/NIGP%7B%5C_%7DCode
+      \endverb
+    \endentry
+    \entry{wiki-okpd}{misc}{}
+      \field{sortinit}{1}
+      \field{sortinithash}{27a2bc5dfb9ed0a0422134d636544b5d}
+      \field{labeltitlesource}{title}
+      \field{title}{{All-Russian classifier of products - Wikipedia [Obshcherossijskij klassifikator produkcii — Wikipedia]}}
+      \field{urlday}{31}
+      \field{urlmonth}{8}
+      \field{urlyear}{2018}
+      \field{urldateera}{ce}
+      \verb{url}
+      \verb https://ru.wikipedia.org/?oldid=93314460
+      \endverb
+    \endentry
+    \entry{gos-zakupki}{misc}{}
+      \field{sortinit}{1}
+      \field{sortinithash}{27a2bc5dfb9ed0a0422134d636544b5d}
+      \field{labeltitlesource}{title}
+      \field{title}{{The official site of the Unified Information System in the field of procurement [Oficial'nyj sajt Edinoj informacionnoj sistemy v sfere zakupok]}}
+      \field{urlday}{4}
+      \field{urlmonth}{9}
+      \field{urlyear}{2018}
+      \field{urldateera}{ce}
+      \verb{url}
+      \verb http://www.zakupki.gov.ru/
+      \endverb
+    \endentry
+    \entry{data-gov}{misc}{}
+      \field{sortinit}{1}
+      \field{sortinithash}{27a2bc5dfb9ed0a0422134d636544b5d}
+      \field{labeltitlesource}{title}
+      \field{title}{{Datasets - Data.gov}}
+      \field{urlday}{4}
+      \field{urlmonth}{9}
+      \field{urlyear}{2018}
+      \field{urldateera}{ce}
+      \verb{url}
+      \verb https://catalog.data.gov/dataset
+      \endverb
+    \endentry
+    \entry{doc2vec}{article}{}
+      \name{author}{3}{}{%
+        {{hash=4bc2a4c8e24561e4f6e8d8d340ab08b7}{%
+           family={Le},
+           familyi={L\bibinitperiod},
+           given={QV\bibnamedelima Quoc},
+           giveni={Q\bibinitperiod\bibinitdelim Q\bibinitperiod}}}%
+        {{hash=a2d359b12ca2fadf0b40136a73f021bb}{%
+           family={Mikolov},
+           familyi={M\bibinitperiod},
+           given={Tomas},
+           giveni={T\bibinitperiod}}}%
+        {{hash=8d71526a2c73fc8e8d6c7dfad2ca459c}{%
+           family={Com},
+           familyi={C\bibinitperiod},
+           given={Tmikolov\bibnamedelima Google},
+           giveni={T\bibinitperiod\bibinitdelim G\bibinitperiod}}}%
+      }
+      \strng{namehash}{2bfb265491176fccbf9fdafe3b25fe15}
+      \strng{fullhash}{2bfb265491176fccbf9fdafe3b25fe15}
+      \strng{authornamehash}{2bfb265491176fccbf9fdafe3b25fe15}
+      \strng{authorfullhash}{2bfb265491176fccbf9fdafe3b25fe15}
+      \field{sortinit}{2}
+      \field{sortinithash}{0aa614ace9f3a40ef5a67e7f7a184048}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{journaltitle}{arXiv preprint arXiv:1405.4053}
+      \field{title}{{Distributed representations of sentences and documents}}
+      \field{volume}{32}
+      \field{year}{2014}
+      \verb{file}
+      \verb :home/denis/.local/share/data/Mendeley Ltd./Mendeley Desktop/Downloaded/Le, Mikolov, Com - 2014 - Distributed Representations of Sentences and Documents.pdf:pdf
+      \endverb
+      \verb{url}
+      \verb https://arxiv.org/abs/1405.4053
+      \endverb
+    \endentry
+    \entry{gensim}{inproceedings}{}
+      \name{author}{2}{}{%
+        {{hash=b18678c3d1080b2d17429891ff481948}{%
+           family={Řehůřek},
+           familyi={Ř\bibinitperiod},
+           given={Radim},
+           giveni={R\bibinitperiod}}}%
+        {{hash=6279e9bacedcff3b6605bcd9faaaf41c}{%
+           family={Sojka},
+           familyi={S\bibinitperiod},
+           given={Petr},
+           giveni={P\bibinitperiod}}}%
+      }
+      \list{location}{1}{%
+        {Valletta, Malta}%
+      }
+      \list{publisher}{1}{%
+        {ELRA}%
+      }
+      \strng{namehash}{0c7724ed4f55cbb86419c913d469aa5c}
+      \strng{fullhash}{0c7724ed4f55cbb86419c913d469aa5c}
+      \strng{authornamehash}{0c7724ed4f55cbb86419c913d469aa5c}
+      \strng{authorfullhash}{0c7724ed4f55cbb86419c913d469aa5c}
+      \field{sortinit}{2}
+      \field{sortinithash}{0aa614ace9f3a40ef5a67e7f7a184048}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{annotation}{$\backslash$url{\{}http://is.muni.cz/publication/884893/en{\}}}
+      \field{booktitle}{Proceedings of the LREC 2010 Workshop on New Challenges for NLP Frameworks}
+      \field{month}{5}
+      \field{title}{{Software Framework for Topic Modelling with Large Corpora}}
+      \field{year}{2010}
+      \field{pages}{45\bibrangedash 50}
+      \range{pages}{6}
+      \keyw{specom-17}
+    \endentry
+    \entry{fasttext}{article}{}
+      \name{author}{4}{}{%
+        {{hash=977d047821122d1c2e7aa855c30c8cf2}{%
+           family={Joulin},
+           familyi={J\bibinitperiod},
+           given={Armand},
+           giveni={A\bibinitperiod}}}%
+        {{hash=ebdea2c3aa9f759075733b20dce6b873}{%
+           family={Grave},
+           familyi={G\bibinitperiod},
+           given={Edouard},
+           giveni={E\bibinitperiod}}}%
+        {{hash=dfd2b635b41689b48c4b81ce769b940b}{%
+           family={Bojanowski},
+           familyi={B\bibinitperiod},
+           given={Piotr},
+           giveni={P\bibinitperiod}}}%
+        {{hash=a2d359b12ca2fadf0b40136a73f021bb}{%
+           family={Mikolov},
+           familyi={M\bibinitperiod},
+           given={Tomas},
+           giveni={T\bibinitperiod}}}%
+      }
+      \strng{namehash}{944b804f8fedee2cb0fb1b07f55ba209}
+      \strng{fullhash}{7f7e632c405feed1b5caeb0c7b305d82}
+      \strng{authornamehash}{944b804f8fedee2cb0fb1b07f55ba209}
+      \strng{authorfullhash}{7f7e632c405feed1b5caeb0c7b305d82}
+      \field{sortinit}{2}
+      \field{sortinithash}{0aa614ace9f3a40ef5a67e7f7a184048}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{abstract}{This paper explores a simple and efficient baseline for text classification. Our experiments show that our fast text classifier fastText is often on par with deep learning classifiers in terms of accuracy, and many orders of magnitude faster for training and evaluation. We can train fastText on more than one billion words in less than ten minutes using a standard multicore{\~{}}CPU, and classify half a million sentences among{\~{}}312K classes in less than a minute.}
+      \field{eprinttype}{arXiv}
+      \field{month}{7}
+      \field{title}{{Bag of Tricks for Efficient Text Classification}}
+      \field{year}{2016}
+      \verb{eprint}
+      \verb 1607.01759
+      \endverb
+      \verb{file}
+      \verb :home/denis/.local/share/data/Mendeley Ltd./Mendeley Desktop/Downloaded/Joulin et al. - 2016 - Bag of Tricks for Efficient Text Classification.pdf:pdf
+      \endverb
+      \verb{url}
+      \verb http://arxiv.org/abs/1607.01759
+      \endverb
+    \endentry
+    \entry{mikolov2013}{inproceedings}{}
+      \name{author}{4}{}{%
+        {{hash=a2d359b12ca2fadf0b40136a73f021bb}{%
+           family={Mikolov},
+           familyi={M\bibinitperiod},
+           given={Tomas},
+           giveni={T\bibinitperiod}}}%
+        {{hash=ee3f7d7b96add98106db907e189d6c13}{%
+           family={Chen},
+           familyi={C\bibinitperiod},
+           given={Kai},
+           giveni={K\bibinitperiod}}}%
+        {{hash=3d11e6f2a0d0a1183b2cf62996525afc}{%
+           family={Corrado},
+           familyi={C\bibinitperiod},
+           given={Greg},
+           giveni={G\bibinitperiod}}}%
+        {{hash=4aecfb0cc2e1e3b7899129fa2a94e2b8}{%
+           family={Dean},
+           familyi={D\bibinitperiod},
+           given={Jeffrey},
+           giveni={J\bibinitperiod}}}%
+      }
+      \strng{namehash}{ed4d154f6ad724ee86e4b498231228f3}
+      \strng{fullhash}{f24c60896b6daa69474b40efb61f4e88}
+      \strng{authornamehash}{ed4d154f6ad724ee86e4b498231228f3}
+      \strng{authorfullhash}{f24c60896b6daa69474b40efb61f4e88}
+      \field{sortinit}{2}
+      \field{sortinithash}{0aa614ace9f3a40ef5a67e7f7a184048}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{abstract}{We propose two novel model architectures for computing continuous vector representations of words from very large data sets. The quality of these representations is measured in a word similarity task, and the results are compared to the previously best performing techniques based on different types of neural networks. We observe large improvements in accuracy at much lower computational cost, i.e. it takes less than a day to learn high quality word vectors from a 1.6 billion words data set. Furthermore, we show that these vectors provide state-of-the-art performance on our test set for measuring syntactic and semantic word similarities.}
+      \field{booktitle}{Proceedings of the International Conference on Learning Representations (ICLR 2013)}
+      \field{eprinttype}{arXiv}
+      \field{month}{1}
+      \field{title}{{Efficient estimation of word representations in vector space}}
+      \field{year}{2013}
+      \field{pages}{1\bibrangedash 12}
+      \range{pages}{12}
+      \verb{eprint}
+      \verb 1301.3781
+      \endverb
+      \verb{file}
+      \verb :home/denis/.local/share/data/Mendeley Ltd./Mendeley Desktop/Downloaded/Mikolov et al. - Unknown - Vector Space.pdf:pdf
+      \endverb
+      \verb{url}
+      \verb http://arxiv.org/abs/1301.3781
+      \endverb
+      \keyw{specom-17}
+    \endentry
+    \entry{dupe-detect}{book}{}
+      \name{author}{1}{}{%
+        {{hash=2df88d211fd24d931ebe3bf0dd661f93}{%
+           family={Christen},
+           familyi={C\bibinitperiod},
+           given={Peter},
+           giveni={P\bibinitperiod}}}%
+      }
+      \list{location}{1}{%
+        {Berlin Heidelberg}%
+      }
+      \list{publisher}{1}{%
+        {Springer-Verlag}%
+      }
+      \strng{namehash}{2df88d211fd24d931ebe3bf0dd661f93}
+      \strng{fullhash}{2df88d211fd24d931ebe3bf0dd661f93}
+      \strng{authornamehash}{2df88d211fd24d931ebe3bf0dd661f93}
+      \strng{authorfullhash}{2df88d211fd24d931ebe3bf0dd661f93}
+      \field{sortinit}{2}
+      \field{sortinithash}{0aa614ace9f3a40ef5a67e7f7a184048}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{isbn}{978-3-642-31163-5}
+      \field{title}{{Data Matching: Concepts and Techniques for Record Linkage, Entity Resolution, and Duplicate Detection}}
+      \field{year}{2012}
+      \field{pages}{272}
+      \range{pages}{1}
+      \verb{doi}
+      \verb 10.1007/978-3-642-31164-2
+      \endverb
+      \verb{file}
+      \verb :home/denis/.local/share/data/Mendeley Ltd./Mendeley Desktop/Downloaded/Christen - 2012 - Data matching concepts and techniques for record linkage, entity resolution, and duplicate detection.pdf:pdf
+      \endverb
+    \endentry
+    \entry{google-translate-rare}{article}{}
+      \name{author}{4}{}{%
+        {{hash=1fc7a40d6072b1bb1d4e56d14ef88e2f}{%
+           family={Wu},
+           familyi={W\bibinitperiod},
+           given={Yonghui},
+           giveni={Y\bibinitperiod}}}%
+        {{hash=29ea22df63f174ac629e9ef100b40484}{%
+           family={Schuster},
+           familyi={S\bibinitperiod},
+           given={Mike},
+           giveni={M\bibinitperiod}}}%
+        {{hash=c0d10aaf985cebf8d0497e1828f9313f}{%
+           family={Chen},
+           familyi={C\bibinitperiod},
+           given={Zhifeng},
+           giveni={Z\bibinitperiod}}}%
+        {{hash=1633c392d651912a53a929a28bd31bb4}{%
+           family={Le},
+           familyi={L\bibinitperiod},
+           given={Quoc\bibnamedelima V.},
+           giveni={Q\bibinitperiod\bibinitdelim V\bibinitperiod}}}%
+      }
+      \strng{namehash}{efb78d75edae4c7c2772249ec014241a}
+      \strng{fullhash}{0e8b02ed1184e9afad0da0d78e3bb710}
+      \strng{authornamehash}{efb78d75edae4c7c2772249ec014241a}
+      \strng{authorfullhash}{0e8b02ed1184e9afad0da0d78e3bb710}
+      \field{sortinit}{2}
+      \field{sortinithash}{0aa614ace9f3a40ef5a67e7f7a184048}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{abstract}{Neural Machine Translation (NMT) is an end-to-end learning approach for automated translation, with the potential to overcome many of the weaknesses of conventional phrase-based translation systems. Unfortunately, NMT systems are known to be computationally expensive both in training and in translation inference. Also, most NMT systems have difficulty with rare words. These issues have hindered NMT's use in practical deployments and services, where both accuracy and speed are essential. In this work, we present GNMT, Google's Neural Machine Translation system, which attempts to address many of these issues. Our model consists of a deep LSTM network with 8 encoder and 8 decoder layers using attention and residual connections. To improve parallelism and therefore decrease training time, our attention mechanism connects the bottom layer of the decoder to the top layer of the encoder. To accelerate the final translation speed, we employ low-precision arithmetic during inference computations. To improve handling of rare words, we divide words into a limited set of common sub-word units ("wordpieces") for both input and output. This method provides a good balance between the flexibility of "character"-delimited models and the efficiency of "word"-delimited models, naturally handles translation of rare words, and ultimately improves the overall accuracy of the system. Our beam search technique employs a length-normalization procedure and uses a coverage penalty, which encourages generation of an output sentence that is most likely to cover all the words in the source sentence. On the WMT'14 English-to-French and English-to-German benchmarks, GNMT achieves competitive results to state-of-the-art. Using a human side-by-side evaluation on a set of isolated simple sentences, it reduces translation errors by an average of 60{\%} compared to Google's phrase-based production system.}
+      \field{eprinttype}{arXiv}
+      \field{month}{9}
+      \field{title}{{Google's Neural Machine Translation System: Bridging the Gap between Human and Machine Translation}}
+      \field{year}{2016}
+      \verb{eprint}
+      \verb 1609.08144
+      \endverb
+      \verb{file}
+      \verb :home/denis/.local/share/data/Mendeley Ltd./Mendeley Desktop/Downloaded/Wu et al. - 2016 - Google's Neural Machine Translation System Bridging the Gap between Human and Machine Translation.pdf:pdf
+      \endverb
+      \verb{url}
+      \verb http://arxiv.org/abs/1609.08144
+      \endverb
+    \endentry
+  \endsortlist
+\endrefsection
+\endinput
+

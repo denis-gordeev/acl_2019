@@ -1,9 +1,28 @@
 [0] Config.pm:354> INFO - This is Biber 2.7
 [0] Config.pm:357> INFO - Logfile is 'acl2019.blg'
-[23] biber:303> INFO - === Ср фев 27, 2019, 17:29:55
+[24] biber:303> INFO - === Ср фев 27, 2019, 18:25:38
 [37] Biber.pm:359> INFO - Reading 'acl2019.bcf'
 [96] Biber.pm:835> INFO - Found 23 citekeys in bib section 0
 [107] Biber.pm:3670> INFO - Processing section 0
-[116] Biber.pm:3840> INFO - Looking for bibtex format file 'references.bib' for section 0
-[139] Utils.pm:180> ERROR - Cannot find 'references.bib'!
-[139] Biber.pm:113> INFO - ERRORS: 1
+[117] Biber.pm:3840> INFO - Looking for bibtex format file 'references.bib' for section 0
+[121] bibtex.pm:1435> INFO - Decoding LaTeX character macros into UTF-8
+[128] bibtex.pm:1292> INFO - Found BibTeX data source 'references.bib'
+[139] Utils.pm:164> WARN - month field 'jun' in entry 'ruder-survey' is not an integer - this will probably not sort properly.
+[141] Utils.pm:164> WARN - month field 'oct' in entry 'muse' is not an integer - this will probably not sort properly.
+[142] Utils.pm:164> WARN - month field 'may' in entry 'vecmap' is not an integer - this will probably not sort properly.
+[143] Utils.pm:164> WARN - month field 'may' in entry 'ruder-muse-limitations' is not an integer - this will probably not sort properly.
+[145] Utils.pm:164> WARN - month field 'dec' in entry 'dinu' is not an integer - this will probably not sort properly.
+[147] Utils.pm:164> WARN - month field 'aug' in entry 'jawanpuria' is not an integer - this will probably not sort properly.
+[166] Utils.pm:164> WARN - month field 'jun' in entry 'bilda' is not an integer - this will probably not sort properly.
+[168] Utils.pm:164> WARN - month field 'may' in entry 'short-lda' is not an integer - this will probably not sort properly.
+[173] Utils.pm:164> WARN - month field 'may' in entry 'gensim' is not an integer - this will probably not sort properly.
+[175] Utils.pm:164> WARN - month field 'jul' in entry 'fasttext' is not an integer - this will probably not sort properly.
+[176] Utils.pm:164> WARN - month field 'jan' in entry 'mikolov2013' is not an integer - this will probably not sort properly.
+[178] Utils.pm:164> WARN - month field 'sep' in entry 'google-translate-rare' is not an integer - this will probably not sort properly.
+[193] UCollate.pm:68> INFO - Overriding locale 'en-US' defaults 'normalization = NFD' with 'normalization = prenormalized'
+[193] UCollate.pm:68> INFO - Overriding locale 'en-US' defaults 'variable = shifted' with 'variable = non-ignorable'
+[193] Biber.pm:3499> INFO - Sorting list 'none/global/' of type 'entry' with scheme 'none' and locale 'en-US'
+[193] Biber.pm:3505> INFO - No sort tailoring available for locale 'en-US'
+[203] bbl.pm:608> INFO - Writing 'acl2019.bbl' with encoding 'UTF-8'
+[207] bbl.pm:712> INFO - Output to acl2019.bbl
+[207] Biber.pm:109> INFO - WARNINGS: 12
