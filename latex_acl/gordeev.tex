@@ -43,7 +43,7 @@
 
 \newcommand\BibTeX{B\textsc{ib}\TeX}
 
-\title{Automated Ontology Matching using Cross-lingual Embeddings}
+\title{Automated Ontology Matching and Construction using Cross-lingual Embeddings}
 
 \author{Denis Gordeev, Alexey Rey, Dmitry Shagarov
 	First Author \\
@@ -62,55 +62,24 @@
 \begin{document}
 \maketitle
 \begin{abstract}
-  This document contains the instructions for preparing a camera-ready
-  manuscript for the proceedings of ACL 2019. The document itself
-  conforms to its own specifications, and is therefore an example of
-  what your manuscript should look like. These instructions should be
-  used for both papers submitted for review and for final versions of
-  accepted papers.  Authors are asked to conform to all the directions
-  reported in this document.
+Unsupervised cross-lingual embeddings mapping has provided a unique tool for completely unsupervised translation even for languages with different scripts. In this work we use this method for the task of unsupervised cross-lingual matching of product classifications. Our work also investigates limitations of unsupervised vector alignment and we also suggest several techniques for aligning product classifications based on their descriptions: using or discarding hierarchical information, using translations or pre-matched cross-lingual embeddings and all possible combinations of these approaches.
 \end{abstract}
-
 
 \section{Introduction}
 \foreignlanguage{russian}{Это исторические статьи смежной тематики}
-There are numerous structured information representations containing texts. Among them we can name ontologies, taxonomies, lexical databases such as WordNet. Most of them exist only for English. Many researchers have tried automatically converting such resources into their languages. Mostly attempts were focused on using machine translation engines. [] !!!!!! With the increase in popularity of word embeddings [] !!!!!! some researchers proposed cross-lingual word embedding models. However, most of the early works in this domain relied on massive parallel corpora. In \citeyearpar{muse} Conneau and Arxetxe proposed a method for unsupervised cross-lingual embedding mapping for low-resource languages.
+\subsection{Problem}
+There are numerous structured information representations containing texts in forms of titles, descriptions or definitons. Among them we can name ontologies, taxonomies, lexical databases such as WordNet \cite{wordnet}. Many of them exist only for English. Many researchers have tried automatically converting such resources from English into their languages. Mostly attempts were focused on using machine translation engines, bilingual dictionaries or parallel corpora \cite{Khodak2017,NEALE18.1030}. All this resources are very rare except most popular languages. Some works used word embeddings, which proved to be a powerful tool for dense text representations after papers by Bengio \cite{bengio} and Mikolov \cite{mikolov-representations-2013}. However, first word vector representations models were monolingual only. Soon researchers proposed cross-lingual word embedding models \cite{mikolov-parallel,lazaridou-parallel}. Unfortunately, most of the early works in this domain relied on massive parallel corpora. This solution is not really applicable to low-resource languages due to the lack of available data.
 
-\section{Related work}
-\foreignlanguage{russian}{Это статьи на ту же тему.}
-\section{Methods}
-\subsection{Representing ontologies as embeddings}
-\subsection{Graph Matching}
-\subsubsection{Hungarian}
-\subsubsection{Greedy}
-\section{Data}
-\subsection{Taxonomies}
-\textbf{NIGP}
-
-\textbf{OKPD2}
-\subsection{WordNet}
-\section{Experiments}
-\foreignlanguage{russian}{разные синсеты одного слова можно заматчить с помощью иерархической информации}
-\section{Results}
-\subsection{Taxonomy matching}
-\section{Discussion}
-\section{Conclusion}
-
-
-\section{Introduction}
-Since the works by Bengio, Ducharme and Vincent \cite{bengio} and Mikolov et al. \cite{mikolov-representations-2013} word embeddings have proven to be an effective and computationally-affordable mechanism to present information about words in a dense vector form and to pass it to neural networks and other classifiers. They are successfully used in many domains and are applied to many state-of-the-art natural language processing models at the first stage of computations \cite{levy-goldberg-2015}.
-
-However, efficient embeddings training requires large amounts of data which might be unavailable for rare languages. Moreover, some tasks like machine translation require a lot of annotated data which are especially scarce for languages other than English. Learning mappings between embeddings from different languages or sources has proven to be a rather efficient method for solving this problem \cite{ruder-survey}.
+Learning mappings between embeddings from different languages or sources has proven to be a rather efficient method for solving this problem to some extent \cite{ruder-survey}.
 
 Thus, Alexis Conneau et al. \cite{muse} have published a programming library called MUSE to map embeddings from two different sources into a single space. They have reached 81.7\% accuracy for English-Spanish and 83.7\% for Spanish English pairs for top-1500 source queries in a completely unsupervised mode. For English-Russian and Russian-English their results are not as high and they achieved accuracy of 51.7\% and 63.7\% respectively. Their FastText embeddings were trained on respective Wikipedia datasets for each corresponding language. 
 
-Artetxe, Labaka and Agirre have investigated into limitations of MUSE and show its results to be low for some language pairs, e.g. English-Finnish (0.38\% accuracy). They also present their own solution called Vecmap \cite{vecmap} that outperforms MUSE for this task. For the provided dataset it gets 37.33\% for Spanish-English on average of 10 runs and 37.60\% as the best result (they estimate MUSE result to be 21.23\% on average of 10 runs and 36.20\% at best) and 32.63\% on average for the English-Finnish language pair.
+Artetxe, Labaka and Agirre have investigated into limitations of MUSE and show its results to be low for some language pairs, e.g. English-Finnish (0.38\% accuracy). They also present their own solution called Vecmap \cite{vecmap} that outperforms MUSE for this task. It gets 37.33\% for Spanish-English on average of 10 runs and 37.60\% as the best result (they estimate MUSE result to be 21.23\% on average of 10 runs and 36.20\% at best) and 32.63\% on average for the English-Finnish language pair.
 
-Søgaard, Ruder and Vulić \cite{ruder-muse-limitations} also study generative adversarial networks for word embeddings mapping and report that MUSE achieves 00.00\% accuracy for English-Estonian and 00.09\% accuracy for English-Finnish in the unsupervised mode. Moreover, the result for Estonian in the supervised mode is 31.45\% and for Finnish -- 28.01\%. They also report extreme variance for these language pairs (20-30\% difference in accuracy between different random seeds). The authors state that supervision in the form of identically spelled words achieves the same or better results, and thus renders unsupervised methods unnecessary. Another their argument indicates that it is problematic (the performance is close to zero) to map embeddings in the unsupervised way without large corpora, if different algorithms are used for training embeddings(CBOW Word2Vec and Skip-gram Word2Vec) and if embeddings are trained on texts from different domains.
+\subsection{Solution}
+In this paper we propose a method for matching ontologies, taxonomies and other forms of graph-trees with textual information using hierarchical information and cross-lingual embeddings. It makes it possible to match ontology graphs containing textual descriptions in different languages.
 
-However, it is worth noting that language translation in its pure form is not the only case where algorithms can benefit from using parallel cross-lingual embeddings. In this paper we aim at building an algorithm for unsupervised mapping between coding taxonomies for classifying products. According to the UN \cite{unsd} there are at least 909 (the list seems incomplete - e.g. the currently used OKPD2 for Russia is not listed) classifications from 159 countries and most of them except the most prominent ones are unaligned. As examples of such taxonomies we use NIGP-5 and its Russian counterpart OKPD2. OKPD2 is a Russian national classification for goods and services introduced in 2014. It has a four-level hierarchy. Categories consist of a code and its description (e.g. 01.11.11.112 - Seeds of winter durum wheat where 01.11.1 code corresponds to Wheat). NIGP-5 is its 2-level US analogue (e.g. 620-80 would be pens and 620 -- office supplies).
-
-Taxonomy matching is a rather challenging problem because of the vast number of possible variants of matching (8700 * 17416 in only one direction for our example case) which is challenging even for specialists and requires a lot of time. This is also made more difficult by the fact that matching is not one-by-one but many-to-many (some categories from one product classification may be broad enough to correspond to several categories from the other classification) and should be made across several hierarchy levels. Moreover, it requires expert and language knowledge which is especially difficult to come by in cases of rare languages and taxonomies. Thus, our product classification matching algorithm should satisfy several criteria.
+Taxonomy/Ontology matching is a rather challenging problem because of the vast number of possible variants of matching which is challenging even for specialists and requires a lot of time. This is also made more difficult by the fact that matching is not one-by-one but many-to-many (some categories from one product classification may be broad enough to correspond to several categories from the other classification) and should be made across several hierarchy levels. Moreover, it requires expert and language knowledge which is especially difficult to come by in cases of rare languages and taxonomies. Thus, our product classification matching algorithm should satisfy several criteria.
 
 Due to the lack of resources for rare languages	the algorithm should be:
 \begin{enumerate}
@@ -124,7 +93,11 @@ Due to the lack of resources for rare languages	the algorithm should be:
 	
 	\item be fully or partially unsupervised
 \end{enumerate}
+
 \section{Related work}
+\foreignlanguage{russian}{Это статьи на ту же тему. Т.е. матчинг графов, таксономий, онтологий, ворднетов и тд}
+%\section{Representing graphs as embeddings}
+\section{Cross-lingual embeddings}
 
 MUSE is based on the work by Conneau et al. \cite{muse}. It consists of two algorithms. The first one which is used only in unsupervised cases is a pair of adversarial neural networks. The first neural network is trained to predict from which distribution $\{X, Y\}$ embeddings come. The second neural networks is trained to modify embeddings $X$ multiplying it by matrix $W$ to prevent the first neural network from making accurate discriminations. Thus, at the end of the training we get a matrix $WX$ which is aligned with matrix $Y$.
 
@@ -136,30 +109,39 @@ where $UV^T$ is derived using singular value decomposition SVD$(YX^T) = U \Sigma
 This method is used iteratively with the default number of iterations in MUSE equal to 5. As Søgaard, Ruder and Vulić state Procrustes refinement relies on frequent word pairs to serve as reliable anchors.
 
 Conneau et al. also apply cross-domain similarity local scaling to reduce the hubness problem to which cross-lingual embeddings are prone to \cite{dinu}. It uses cosine distance between a source embedding and $k$-target embeddings (the default $k$ in MUSE is 10) instead of the usual cosine distance to generate a dictionary.
-
 $$sim_{source/target} = \dfrac{1}{k}\sum_{i=1}^Kcos(x, nn_i)$$
+\small
 $$CSLS(x,y) = 2cos(x,y) - sim_{source}(x)  - sim_{target}(y)$$
-
-Vecmap is based on works by Artetxe, Labaka and Agirre. It is close in its idea to the Procrustes refinement, they compute SVD-factorization SVD$(YX^T) = U\Sigma V^T$ and replace $X$ and $Y$ with new matrices $X' = U$ and $Y' = V$. They also propose normalisation and whitening (sphering transformation). After applying whitening new matrices are equal to:
+\normalsize
+Vecmap \cite{vecmap} is close in its idea to the Procrustes refinement, it computes SVD-factorization SVD$(YX^T) = U\Sigma V^T$ and replaces $X$ and $Y$ with new matrices $X' = U$ and $Y' = V$. The authors also propose normalization and whitening (sphering transformation). After applying whitening new matrices are equal to:
 $X' = (X^TX)^{-\tfrac{1}{2}}$ and $Y' = (Y^TY)^{-\tfrac{1}{2}}$
 
 Jawanpuria et al. \cite{jawanpuria} propose a method which is also based on SVD-factorization but in smooth Riemannian manifolds instead of Euclidean space.
 
 Ivan Vulić, Wim De Smet and Marie-Francine Moens  used BiLDA for cross-language information retrieval which is similar to the task of classification matching. In this LDA variant topic distributions are considered to be equivalent for same articles from different languages \cite{bilda}. However, in our case this method is unlikely to perform because LDA requires longer texts \cite{short-lda}. Word embeddings methods are preferable for short texts \cite{maslova-potapov}.
-
-\section{Data description}
+%\subsection{Using text information in graph embeddings}
+\section{Graph Matching}
+There are many methods for graph matching. Many of them are based on grapg edit distance. However, they usually exhibit strong requirements for graph isomorphism. However, most taxonomies do not satisfy this requirement (e.g. even in cases of a WordNet one word may have different synsets that may absent from the other language).
+\subsection{Hungarian}
+\subsection{Greedy}
+\section{Data}
+\subsection{Taxonomies}
 We approach the problem of matching national product and services classifications as the problem of unsupervised bilingual dictionary induction. In this task vectors corresponding to each category from one classification are aligned with vectors from another classification and classifications itself correspond to languages in the original problem. Several vectors from the first taxonomy may correspond to the same vector from the second taxonomy.
 
 \begin{center}
 	\begin{table}[!htbp]
+		\small
 		\caption{Taxonomy examples}
-		\begin{tabular}{p{1.5cm}|p{3cm}|p{3cm}}
-			Category code & Category description \newline (translated for Russian) & Bid description\\
+		\label{table-taxonomies}		
+		\centering
+		\begin{tabular}{|p{1cm}|p{2.5cm}|p{2.5cm}|}
 			\hline
+			Category code & Category description \newline (with translation from Russian) & Bid description\\
 			\hline
 			325-25 & Dog and Cat Food & Dog Food: Blue Buffalo Chicken and Brown Rice Food\\
+			\hline
 			43.31.10 & \begin{otherlanguage*}{russian}Работы штукатурные\end{otherlanguage*} \newline Plastering Works & Overhaul of the Basement Of The Administration Building\\
-			\label{table-taxonomies}
+			\hline
 		\end{tabular}
 	\end{table}
 \end{center}
@@ -169,6 +151,32 @@ Both NIGP-5 and OKPD2 are used to classify products and services. However, they 
 
 The data for the Russian taxonomy OKPD2 was collected from them Russian state website zakupki.gov.ru \cite{gos-zakupki}, which contains purchases made by state entities.
 The data for the US national classification was collected from the US state website data.gov \cite{data-gov}. We have used only marketplace bids by the state of Maryland because they were the only found entries that contained bids descriptions not matching code-descriptions that are required for training Doc2Vec. Extracts from taxonomies can be seen in Table \ref{table-taxonomies}.
+
+\textbf{NIGP}
+
+\textbf{OKPD2}
+\subsection{WordNet}
+We use English WordNet provided by the NLTK package !!!!![].
+\section{Experiments}
+\foreignlanguage{russian}{разные синсеты одного слова можно заматчить с помощью иерархической информации}
+\subsection{NIGP and OKPD2 matching}
+\subsection{Russian WordNet construction using cross-lingual word embeddings}
+\section{Results}
+\subsection{Taxonomy matching}
+\section{Discussion}
+\section{Conclusion}
+
+
+\section{Introduction}
+Since the works by Bengio, Ducharme and Vincent \cite{bengio} and Mikolov et al. \cite{mikolov-representations-2013} word embeddings have proven to be an effective and computationally-affordable mechanism to present information about words in a dense vector form and to pass it to neural networks and other classifiers. They are successfully used in many domains and are applied to many state-of-the-art natural language processing models at the first stage of computations \cite{levy-goldberg-2015}.
+
+Søgaard, Ruder and Vulić \cite{ruder-muse-limitations} also study generative adversarial networks for word embeddings mapping and report that MUSE achieves 00.00\% accuracy for English-Estonian and 00.09\% accuracy for English-Finnish in the unsupervised mode. Moreover, the result for Estonian in the supervised mode is 31.45\% and for Finnish -- 28.01\%. They also report extreme variance for these language pairs (20-30\% difference in accuracy between different random seeds). The authors state that supervision in the form of identically spelled words achieves the same or better results, and thus renders unsupervised methods unnecessary. Another their argument indicates that it is problematic (the performance is close to zero) to map embeddings in the unsupervised way without large corpora, if different algorithms are used for training embeddings(CBOW Word2Vec and Skip-gram Word2Vec) and if embeddings are trained on texts from different domains.
+
+However, it is worth noting that language translation in its pure form is not the only case where algorithms can benefit from using parallel cross-lingual embeddings. In this paper we aim at building an algorithm for unsupervised mapping between coding taxonomies for classifying products. According to the UN \cite{unsd} there are at least 909 (the list seems incomplete - e.g. the currently used OKPD2 for Russia is not listed) classifications from 159 countries and most of them except the most prominent ones are unaligned. As examples of such taxonomies we use NIGP-5 and its Russian counterpart OKPD2. OKPD2 is a Russian national classification for goods and services introduced in 2014. It has a four-level hierarchy. Categories consist of a code and its description (e.g. 01.11.11.112 - Seeds of winter durum wheat where 01.11.1 code corresponds to Wheat). NIGP-5 is its 2-level US analogue (e.g. 620-80 would be pens and 620 -- office supplies).
+
+
+\section{Data description}
+
 
 Unlike the task of usual cross-lingual matching, taxonomy alignment cannot rely on identical strings in category names. Moreover, the task is complicated by the fact that purchases descriptions including categories are collected from absolutely different domains. The task is also affected by the fact that corpora sizes cannot be large (only 70'826 unique entries for NIGP-5 and 1'124'338 -- for OKPD2) because of the lack of data, and thus efficient training of word and document embeddings is hardly possible. Thus, we had to resort to out-of-domain pre-trained embeddings what might convey performance costs. The number of categories is much fewer than the number of words, it carries both advantages and disadvantages (easier to train but our vectors do not contain frequency information which is very important for MUSE) \cite{ruder-muse-limitations}.
 
@@ -229,30 +237,35 @@ We tried several matching techniques:
 \end{enumerate}
 
 \begin{center}
-	\begin{table}
+	\begin{table*}[t!]
+		\label{table-annotation}		
+		\small
+		\centering
 		\caption{Illustration of category allignment}
-		\begin{tabular}{p{1cm}|p{1.5cm}|p{1cm}|p{2cm}|p{1cm}}
-			Source \newline Category  \newline Code & Source Category description& Target \newline Category Code & Target Category Description \newline (translated from Russian) & Result\\
+		\begin{tabular}{|p{2cm}|p{4cm}|p{2cm}|p{4cm}|p{1cm}|}
+			\hline			
+			{Source Category Code} & {Source Category description}& {Target Category Code} & {Target Category Description (translated from Russian)} & {Result}\\
 			\hline
-			\hline
-			800-16 & Shoes and Boots: Boots, Rubber &
-			43.31.10 & \begin{otherlanguage*}{russian}Сапоги резиновые\end{otherlanguage*} \newline Rubber boots &
-			True
+			{800-16} & {Shoes and Boots: Boots, Rubber} &
+			{43.31.10} & {\begin{otherlanguage*}{russian}Сапоги резиновые\end{otherlanguage*} \newline Rubber boots} &
+			{True}
 			\\
 			\hline
 			958-78 & Management Services Property Management Services &
-			84.11. \newline 19.110 & \begin{otherlanguage*}{russian}Услуги государственного управления имуществом\end{otherlanguage*} \newline State property management services &
+			{84.11.19.110} & \begin{otherlanguage*}{russian}Услуги государственного управления имуществом\end{otherlanguage*} \newline State property management services &
 			Partially True (state)
 			\\
 			\hline
-			936-70 & Roofing Equipment and Machinery Maintenance and Repair &
-			33.12.\newline 23.000 & \begin{otherlanguage*}{russian}Услуги по ремонту и техническому обслуживанию оборудования для металлургии
+			936-70 & {Roofing Equipment and Machinery Maintenance and Repair} &
+			{33.12.23.000} & \begin{otherlanguage*}{russian}Услуги по ремонту и техническому обслуживанию оборудования для металлургии
 			\end{otherlanguage*} \newline Services in repair and maintenance service of the equipment for metallurgy &
-			False
+			False 
+			\\
+			\hline
+
 			
-			\label{table-annotation}
 		\end{tabular}
-	\end{table}
+	\end{table*}
 \end{center}
 
 \section{Annotation procedure}
@@ -263,6 +276,7 @@ Mappings made by all methods were manually annotated on top-N examples according
 \begin{figure}[!htbp]
 	
 	\centering
+	\small
 	\includegraphics[width=0.3\textwidth]{pca_before_cut}\\
 	\raggedright
 	\begin{tabular}{c}
@@ -375,6 +389,13 @@ However, our results show that it is possible to unsupervisedly create a nationa
 
 The results also hint on the idea that unsupervised dictionary alignment results may be so successful because of the parallel nature of Wikipedia (some articles may be direct translations of English ones). However, it requires further investigation.
 We also demonstrate that using structural and hierarchical dataset information may considerably improve matching results, what is applicable to many Internet-based datasets like Wikipedia.
+\section{General phrases}
+Using hierarchical information may be beneficial in a range of text classification tasks \cite{tax2vec} as well as in computer vision problems such as ImageNet \cite{hedging-bets}.
+
+It was also shown by Yang \citeyearpar{glomo} that using graph and hierarchical is beneficial for many downstream tasks such as SQuAD.
+
+There is a dedicated taxonomy matching competition Ontology Alignment Evaluation Initiative \cite{ontology-sota}.
+
 
 \bibliographystyle{acl_natbib}
 \bibliography{gordeev}

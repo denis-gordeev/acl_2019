@@ -229,7 +229,8 @@ def wordnet_to_df():
         df[f"class{i}_name"] = [h.name() if h else None for h in hypernyms]
         df[f"class{i}_vectors"] = None
         df[f"class{i}_vectors"] = df[f"class{i}_vectors"].astype('object')
-        unique_synsets = df[f"class{i}_synsets"].drop_duplicates().dropna()
+        # unique_synsets = df[f"class{i}_synsets"].drop_duplicates().dropna()
+        unique_synsets = df[f"class{i}_synsets"].dropna()
         index = unique_synsets.index
         print("\n\n")
         for u_i, u_s in enumerate(unique_synsets):
