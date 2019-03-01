@@ -86,7 +86,7 @@ def get_bottomup_vectors(taxonomy, i, model):
             # if len(vectors) != len(code_index):
             #     vectors = [vectors] * len(code_index)
             for c in code_index:
-                taxonomy.loc[code_index, level_vectors] = [vectors]
+                taxonomy.loc[c, level_vectors] = [vectors]
         except Exception as ex:
             print(ex)
             continue
@@ -204,6 +204,36 @@ def get_nouns_from_model(model):
     return nouns
 
 
+def get_vectors_from_prev_synset(df, i, lang="ru"):
+    if lang == "ru":
+        suffix = "_ru"
+    else:
+        suffix = ""
+    i_vecs = f"class{i}_vectors{suffix}"
+    if i < 9:
+        upper_vecs = f"class{i+1}_vectors{suffix}"
+    else:
+        upper_vecs = f"class{i+1}_vectors"
+    i_synsets = f"class{i}_synsets"
+    df[i_vecs] = None
+    # df[f"class{i}_vectors{lang}"] = df[f"class{i}_vectors"].astype('object')
+    unique_synsets = df[i_synsets].drop_duplicates().dropna()
+    # unique_synsets = unique_synsets[unique_synsets != '']
+    # unique_synsets = df[f"class{i}_synsets"].dropna()
+    index = unique_synsets.index
+    print("\n\n")
+    for u_i, u_s in enumerate(unique_synsets):
+        print("\t", u_i, end="\r")
+        # this level synsets having this homonym
+        # (being hypernyms of the prev level)
+        vectors = df[df[i_synsets] == u_s]
+        vectors = vectors[upper_vecs]
+        vectors = vectors.dropna()
+        vectors = np.mean(vectors)
+        df.at[index[u_i], i_vecs] = vectors
+    return df
+
+
 def wordnet_to_df():
     model = load_embeddings("en")
     hyponyms = [w for w in wordnet.all_synsets()]
@@ -219,6 +249,7 @@ def wordnet_to_df():
     df[f"class{top_level}_name"] = names
     # get_averaged_vectors requires a list of strings
     df[f"class{top_level}_vectors"] = [model[n] for n in names]
+    # get hyponyms for English wordnet
     for i in range(top_level - 1, -1, -1):
         print("\t", i, end="\r")
         hypernyms = [h.hypernyms() if h else None
@@ -227,44 +258,75 @@ def wordnet_to_df():
         hypernyms = [h[0] if h else None for h in hypernyms]
         df[f"class{i}_synsets"] = hypernyms
         df[f"class{i}_name"] = [h.name() if h else None for h in hypernyms]
-        df[f"class{i}_vectors"] = None
-        df[f"class{i}_vectors"] = df[f"class{i}_vectors"].astype('object')
-        # unique_synsets = df[f"class{i}_synsets"].drop_duplicates().dropna()
-        unique_synsets = df[f"class{i}_synsets"].dropna()
-        index = unique_synsets.index
-        print("\n\n")
-        for u_i, u_s in enumerate(unique_synsets):
-            print("\t", u_i, end="\r")
-            # prev class synsets having this homonym
-            vectors = df[df[f"class{i}_synsets"] == u_s][f"class{i+1}_vectors"]
-            vectors = vectors.dropna()
-            vectors = np.mean(vectors)
-            df.loc[index[u_i], f"class{i}_vectors"] = vectors
-    df["class0_synsets"].drop_duplicates().dropna()
-    model_ru = load_embeddings("ru")
-
-    nouns = get_nouns_from_model(model_ru)
-
+        df = get_vectors_from_prev_synset(df, i, "en")
+    print(df["class0_synsets"].drop_duplicates().dropna())
+    lang = "ru"
+    model_ru = load_embeddings(lang)
+    if lang == "ru":
+        nouns = get_nouns_from_model(model_ru)
+    # get Non-English (Russian) wordnet words
+    # first we get vectors from English words
+    # after that we use hierarchical Russian vectors
+    use_russian_vectors = False
     for i in range(top_level, -1, -1):
         print("\n")
-        vectors = df[f"class{i}_vectors"].dropna()
-        df[f"class{i}_ru"] = ""
+        if i == top_level:
+            vectors = df[f"class{i}_vectors"].dropna()
+        else:
+            if use_russian_vectors:
+                vectors = df[f"class{i}_vectors_{lang}"].dropna()
+            else:
+                vectors = df[f"class{i}_vectors"].dropna()
+        df[f"class{i}_{lang}"] = ""
         df[f"class{i}_sim"] = 0
         index = vectors.index
         for j, v in enumerate(vectors.values):
             print("\t", i, j, end="\r")
-            most_similar = model_ru.most_similar([v], topn=20)
-            most_similar = [m for m in most_similar if m[0] in nouns]
+            if i != top_level:
+                prev_word = df.loc[index[j]][f"class{i+1}_{lang}"]
+            else:
+                prev_word = ""
+            most_similar = model_ru.most_similar([v], topn=100)
+            most_similar = [m for m in most_similar
+                            if m[0] in nouns and m[0] != prev_word]
             if not most_similar:
                 continue
             most_similar = most_similar[0]
             ru_word = most_similar[0]
             similarity = most_similar[1]
             if similarity > 0.5:
-                df.loc[index[j], f"class{i}_ru"] = ru_word
+                df.loc[index[j], f"class{i}_{lang}"] = ru_word
                 df.loc[index[j], f"class{i}_sim"] = similarity
-    closest = df[df[f"class{i}_sim"] > 0.7]
-    closest[[f"class{i}_names", f"class{i}_ru", f"class{i}_sim"]]
+        # create Russian vectors for the next level
+        if use_russian_vectors:
+            if i == top_level:
+                # get vectors for russian words
+                df[f"class{i}_vectors_{lang}"] = [
+                    model_ru[n] if n in model_ru else None
+                    for n in df[f"class{i}_{lang}"].values]
+            if i != 0:
+                df = get_vectors_from_prev_synset(df, i - 1)
+    i = 9
+    closest = df[df[f"class{i}_sim"] > 0.8]
+    closest[[f"class{i}_name", f"class{i}_{lang}", f"class{i}_sim"]]
+
+    unique_ru = df[f"class{i}_ru"].drop_duplicates().dropna()
+    unique_ru = unique_ru[unique_ru != '']
+    for u_r in unique_ru:
+        df[f"class{i}_ru"] == u_r
+
+    i = 8
+    group = df.groupby(f"class{i}_ru").count()
+    group = group[group["class10_ru"] < 1000]["class10_ru"]
+    words = group[group > 2].index
+    for word in words:
+        print(df[df[f"class{i}_ru"] == word][[
+            "class10_ru", "class9_ru"]])
+
+    # save wordnet to csv
+    df[[col for col in df.columns if
+        any(w in col for w in ("_ru", "_sim", "_col", "name"))
+        ]].to_csv(f"wordnet3_{lang}_without_duplicates.csv")
     return df
 
 
