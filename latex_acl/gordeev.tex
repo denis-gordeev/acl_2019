@@ -66,7 +66,7 @@
 \begin{document}
 \maketitle
 \begin{abstract}
-In this paper we propose a method for matching ontologies, taxonomies and other forms of graph-trees with textual information using hierarchical information and cross-lingual embeddings.
+There exist numerous structured text representations such as taxonomies, ontologies and lexical databases. Low-resource languages often lack such resources. In this paper we propose a method for matching and constructing ontologies, taxonomies and other forms of graph-trees with textual information using hierarchical information and cross-lingual embeddings.
 \end{abstract}
 
 \section{Introduction}
@@ -75,7 +75,7 @@ There are numerous structured information representations containing texts in fo
 
 Learning mappings between embeddings from different languages or sources has proven to be a rather efficient method for solving this problem to some extent \cite{ruder-survey}.
 
-Thus, Alexis Conneau et al. \cite{muse} have published a programming library called MUSE to map embeddings from two different sources into a single space. They have reached 81.7\% accuracy for English-Spanish and 83.7\% for Spanish English pairs for top-1500 source queries in a completely unsupervised mode. For English-Russian and Russian-English their results are not as high and they achieved accuracy of 51.7\% and 63.7\% respectively. Their FastText embeddings were trained on respective Wikipedia datasets for each corresponding language. 
+Alexis Conneau et al. \cite{muse} have published a programming library called MUSE to map embeddings from two different sources into a single space. They have reached 81.7\% accuracy for English-Spanish and 83.7\% for Spanish English pairs for top-1500 source queries in a completely unsupervised mode. For English-Russian and Russian-English their results are not as high and they achieved accuracy of 51.7\% and 63.7\% respectively. Their FastText embeddings were trained on respective Wikipedia datasets for each corresponding language and do not 
 
 Artetxe, Labaka and Agirre have investigated into limitations of MUSE and show its results to be low for some language pairs, e.g. English-Finnish (0.38\% accuracy). They also present their own solution called Vecmap \cite{vecmap} that outperforms MUSE for this task. It gets 37.33\% for Spanish-English on average of 10 runs and 37.60\% as the best result (they estimate MUSE result to be 21.23\% on average of 10 runs and 36.20\% at best) and 32.63\% on average for the English-Finnish language pair.
 
@@ -97,9 +97,8 @@ Due to the lack of resources for rare languages	the algorithm should be:
 \end{enumerate}
 
 \section{Related work}
-There are numerous papers concerned with taxonomies and ontologies matching. The problem of matching product taxonomies was also studied by Gordeev et al. in \citeyearpar{gordeev-fruct}.
+There are numerous papers concerned with taxonomies and ontologies matching. There is even a dedicated taxonomy matching competition Ontology Alignment Evaluation Initiative \cite{ontology-sota}. The winner of the last two years is the model called the AgreementMakerLight \cite{faria}. It is monolingual only and relies on hash and word matching. Unsupervised WordNet construction has been demonstrated by Khodak in \citeyearpar{Khodak2017}. They use bilingual dictionaries and word embeddings to build Russian WordNet as in our case. The problem of matching product taxonomies was also studied by Gordeev et al. in \citeyearpar{gordeev-fruct}.
 
-\foreignlanguage{russian}{Процитировать себя}
 %\section{Representing graphs as embeddings}
 \section{Cross-lingual embeddings}
 
@@ -135,12 +134,22 @@ Jawanpuria et al. \cite{jawanpuria} propose a method which is also based on SVD-
 Ivan Vulić, Wim De Smet and Marie-Francine Moens  used BiLDA for cross-language information retrieval which is similar to the task of classification matching. In this LDA variant topic distributions are considered to be equivalent for same articles from different languages \cite{bilda}. However, in our case this method is unlikely to perform because LDA requires longer texts \cite{short-lda}. Word embeddings methods are preferable for short texts \cite{maslova-potapov}.
 
 \subsection{Simplistic use of word embeddings for graph representations}
-In this paper we use a very simple baseline for representing graphs. We represent higher levels of hierarchy as averaged embeddings of lower levels, thus we use a bottom-up approach.
+In this paper we use a very simple baseline for representing graphs. We represent higher levels of hierarchy as averaged embeddings of lower levels, thus we use a bottom-up approach. We used cross-lingual embeddings in a single vector space provided by the authors of MUSE (i.e. vectors for "cat" and its Russian translation \foreignlanguage{russian}{"кот"} are close to each other). Using hierarchical information may be beneficial in a range of text classification tasks \cite{tax2vec} as well as in computer vision problems such as ImageNet \cite{hedging-bets}. It was also shown by Yang \citeyearpar{glomo} that using graph and hierarchical is beneficial for many downstream tasks such as SQuAD.
+
 
 %\subsection{Using text information in graph embeddings}
 \section{Graph Matching}
 There are many methods for graph matching. Many of them are based on graph edit distance. However, they usually exhibit strong requirements for graph isomorphism. Unfortunately, most taxonomies do not satisfy this requirement (e.g. even in cases of a WordNet one word may have different synsets that may be absent from the other language). Inexact matching methods that overcome this constraint are based on spectral decompositions of graphs using eigenvalues or on weighted graph matchings \cite{30years-graphs}. Given that we deal with cross-lingual embeddings it seemed reasonable to adapt a weight matching algorithm for our task. Thus, we used our hierarchical modification of the so-called Hungarian algorithm \cite[p.~201]{lawler} \cite[p.~48]{Riesen2010}. We also compared it with the greedy method, where we just select the vector with the highest similarity.
 \subsection{The Hungarian method}
+\begin{figure}
+	
+	\centering
+	\small
+	\includegraphics[scale=0.3]{hungarian}\\
+	
+	\caption{the Hungarian algorithm visualisation}
+	\label{hungarian}
+\end{figure}
 We use a hierarchical version of the Hungarian algorithm. The algorithm takes as the input a similarity matrix of the size $n \times m$. If $m < n$, the matrix is transposed. As given by Brauner et al. in \citeyear{hungarian-listing} the algorithm looks the following way:
 
 1. For the initial weight matrix subtract the minimum from each row and then subtract the minimum from each column.
@@ -216,6 +225,9 @@ For the bottom-up approach the lowest level of hierarchy was also attained with 
 After getting a vector for each category we built layer-wise similarity matrices between taxonomies. Then we applied either Hungarian or greedy method for matching the taxonomies. After getting closest categories for the first layer, we looked only for categories that corresponded to the category chosen at the upper level (e.g. if the chosen category code is 64.12 at the next level we look only for categories 64.12.1, 64.12.2).
 \subsection{Russian WordNet construction using cross-lingual word embeddings}
 We use an extension approach where we take the existing English WordNet and transform its synsets into Russian \cite{NEALE18.1030}. As with taxonomies we built a Wordnet tree using hypernym-hyponym relations between synsets. Also we build a list of Russian nouns using the rnnmorph library \footnote{https://github.com/IlyaGusev/rnnmorph}. Then for the bottom WordNet layer we looked for the closest Russian nouns using most-similar function (cosine similarity) provided by the library Gensim \cite{gensim}. After that, just as in the case with taxonomy matching we constructed embeddings for the upper level averaging bottom-level vectors. We used the same hyponym-hyperonym relations as for English.
+\section{Annotation procedure}
+
+Mappings made by all methods were manually annotated on random 5\% of examples according to the corresponding similarity metric (cosine distance for vectors and our string similarity function for strings similarity). The annotation included two classes: True, False. If examples were too specific or too broad (if the annotator was aware of this fact), the match was considered incorrect.
 \section{Results}
 
 \subsection{Taxonomy matching}
@@ -230,43 +242,15 @@ We use an extension approach where we take the existing English WordNet and tran
 	bottom-up hungarian & 47.5 \\ \hline
 	bottom-up greedy & 45 \\ \hline
 	top-down hungarian & 33 \\ \hline
-	top-down greedy & 25.5 \\
+	top-down greedy & 25.5 \\ \hline
+	translated strings matching & 41 \\
 	\hline
 	\end{tabular}
 \end{table}
-\subsection{Wordnet construction}
-	\begin{table}[!htbp]
-	\small
-	\caption{Taxonomy examples}
-	\label{table-taxonomies-results}		
-	\centering
-	\begin{tabular}{|l|l|l|}
-		\hline
-		{Method} & {Accuracy \%} \\ \hline
-		bottom-up hungarian & 47.5 \\ \hline
-		bottom-up greedy & 45 \\ \hline
-		top-down hungarian & 33 \\ \hline
-		top-down greedy & 25.5 \\
-		\hline
-	\end{tabular}
-\end{table}
-\section{Discussion}
-\section{Conclusion}
 
-\section{Mapping methods}
-
-
-
-\subsection{Matching methods}
-
-We tried several matching techniques:
-\begin{enumerate}
-
-	\item Untranslated texts in the common embedding space.
-	
-	We used cross-lingual embeddings in a single vector space provided by the authors of MUSE (i.e. vectors for "cat" and its Russian translation \foreignlanguage{russian}{"кот"} are close to each other). Using these embeddings we trained Word2Vec and got averaged vectors for each category using its description.
-\end{enumerate}
-
+As can be seen from Table \ref{table-taxonomies-results} the hierarchical Hungarian
+method and bottom-up graph embedding representations both help in boosting the results of taxonomy matching. Still translated strings matching is quite a strong baseline which may be the preferred solution when there is a translation engine for the studied language. In the other case the procedure would be: first, to train word-embeddings using some corpora from a common domain (e.g. Wikipedia), then align them using MUSE or Vecmap. After that, those embeddings may be used to map category descriptions. It should be also noted that mappings annotated as wrong were not completely incorrect and were usually on topic (e.g. acids -> oils; engine maintenance -> auto body repair; sewage treatment equipment -> sewage treatment services).
+We get slightly worse results for string matching in comparison with \cite{gordeev-fruct} because we use a more rigid annotation procedure and rely on expert knowledge of the taxonomies. Thus, hierarchical information is of importance in our experiment.
 \begin{center}
 	\begin{table*}[t!]
 		\label{table-annotation}		
@@ -293,103 +277,31 @@ We tried several matching techniques:
 			False 
 			\\
 			\hline
-
+			
 			
 		\end{tabular}
 	\end{table*}
 \end{center}
-
-\section{Annotation procedure}
-
-Mappings made by all methods were manually annotated on top-N examples according to the corresponding similarity metric (cosine distance for vectors and our string similarity function for strings similarity). If for the first 50 (about top-1\%) examples the accuracy was below 1\% we dropped annotation for this method. The probability for at least one correct example for a random matching method is difficult to estimate (there may be several categories from the second classification that correspond  to the category from the first classification and we do not have the reference alignment) but it may be estimated as ~0.006\%. Otherwise, we annotated top-5\% (231 examples). The annotation included three classes: True, False, Partially true. Partially true examples are usually those that are too specific (fuel management -> nuclear fuel management; rubber shoes -> women rubber shoes; property management services -> state property management) or just not accurate enough according to the assessor. During accuracy estimation "partially true" entries were considered as wrong matches.
-\section{Results}
-
-\begin{figure}[!htbp]
-	
-	\centering
-	\includegraphics[width=0.3\textwidth]{pca_muse_cut_unsupervised}\\
-	\raggedright
-	\begin{tabular}{c}
-		\fcolorbox{black}{gray}{} OKPD \\
-		\fcolorbox{black}{gray!30}{} NIGP
-	\end{tabular}
-	\caption{PCA visualisation of averaged Word2Vec vectors for OKPD and NIGP-5 taxonomies after applying unsupervised MUSE}
-	\label{muse}
-\end{figure}
-\begin{figure}[!htbp]
-	
-	\centering
-	\includegraphics[width=0.3\textwidth]{pca_vecmap_cut}\\
-	\raggedright
-	\begin{tabular}{c}
-		\fcolorbox{black}{gray}{} OKPD \\
-		\fcolorbox{black}{gray!30}{} NIGP
-	\end{tabular}
-	\caption{PCA visualisation of averaged Word2Vec vectors for OKPD and NIGP-5 taxonomies after applying supervised Vecmap with 50\% categories in the dictionary}
-	\label{vecmap}
-\end{figure}
-
-\begin{figure}[!htbp]
-	
-	\centering
-	\includegraphics[width=0.3\textwidth]{tsne_before}\\
-	\raggedright
-	\begin{tabular}{c}
-		\fcolorbox{black}{gray}{} OKPD \\
-		\fcolorbox{black}{gray!30}{} NIGP
-	\end{tabular}
-	\caption{T-SNE visualisation of original doc2vec embeddings}
-	\label{tsne}
-\end{figure}
-
-\begin{center}
+\subsection{Wordnet construction}
 	\begin{table}[!htbp]
-		\caption{Comparison of matching methods for top-n entries by cosine distance}
-		\begin{tabular}{p{3.3cm}|p{0.8cm}|p{0.9cm}|p{0.8cm}|p{0.8cm}}
-			Method \newline Description & Correct matches & Partially correct matches & Wrong matches &
-			Accuracy \newline (\%)\\
-			\hline
-			\hline
-			Translated strings comparison & 126 & 31 & 74 & 55\\
-			\hline
-			Averaged Word2Vec for translated descriptions & 102 & 53 & 76 & 44\\
-			\hline
-			Doc2Vec for translated descriptions & 0 & 0 & 50 & 0\\
-			\hline
-			Unsupervised MUSE with different parameters (none is better) & 0 & 0 & 50 & 0\\
-			\hline
-			Supervised MUSE with different parameters and reference dictionaries with 1,30,50 and 70\% of the vocabulary (none is better) & 0 & 0 & 50 & 0\\
-			\hline
-			Vecmap supervised, semi-supervised with various dictionary sizes (10, 30, 50, 70) and unsupervised  & 0 & 0 & 50 & 0\\
-			\hline
-			averaged Word2Vec using cross-lingual embeddings in single space  & 45 & 19 & 167 & 19.5\\
-			\hline
-			Hierarchical string comparison & 48 & 40 & 143 & 20.8\\
-			\hline
-			Hierarchical averaged Word2vec & 94 & 43 & 94 & 40.7\\
-			\hline
-			Hierarchical averaged Word2Vec using cross-lingual embeddings in single space  & 108 & 7 & 116 & 47.5\\
-			\label{table-accuracies}
-		\end{tabular}
-	\end{table}
-\end{center}
-
-In the Table 3 we can see annotation results for top-n best matches according to cosine distances between vectors and the string similarity score for the translation method.
-
-Figure \ref{tsne} shows that original embeddings (Fig. \ref{original-doc2vec}) can be successfully clustered using t-SNE. Vecmap and MUSE manage to align both spaces (Fig. \ref{muse} and Fig. \ref{vecmap}) successfully so that they are not linearly separable. However, as can be seen from Table \ref{table-accuracies} unsupervised matching techniques fail to properly align taxonomy embeddings. MUSE and Vecmap failed to achieve accuracy above 0\%. Word2Vec and string matching demonstrate better results at the level of alignments for low-resource languages reported by Conneau and Søgaard. Results from averaged Word2vec after alignment are worse than those of translated string comparison which may be attributed to pre-trained embeddings being from a different domain. Moreover, averaging tends to make to broad assumptions (thematic in nature) which is unsuitable for the current task. Doc2vec unsurprisingly gets worse results because of the lack of training data. Unfortunately, for low-resource languages string matching is impossible without a working translation solution which unsupervised cross-lingual dictionary alignment strives to solve.
-
-The surprising fact that Vecmap and Muse cannot align data even in supervised and semi-supervised modes with dictionaries created after Word2Vec or string-alignment matching. It can be partially attributed to the insufficient accuracy of the provided dictionaries or a very low amount of categories (in comparison to words). However, it is possible that both methods latently and mainly depend on word frequencies and other similar distributive information provided by word embeddings. Also supervised mapping adjustment turned out to be strong for our dataset.
-
-Using pre-aligned cross-lingual embeddings might appear to be helpful and is useful for rare languages which lack efficient translation engines. Thus, the procedure would be: first, to train word-embeddings using some corpora from a common domain (e.g. Wikipedia), then align them using MUSE or Vecmap. After that, those embeddings may be used to map category descriptions. It should be also noted that mappings annotated as wrong were not completely incorrect and were usually on topic (e.g. acids -> oils; engine maintenance -> auto body repair; sewage treatment equipment -> sewage treatment services). Thus, some other procedure rather than Word2vec averaging might demonstrate better results for this task.
-
-According to our results, it seems unlikely that unsupervised matching techniques might result in sufficiently good dictionary alignment and machine translation for rare languages (e.g. those that do not have rich corpora like  Wikipedia and currently there are only 61 languages with the number of Wikipedia articles exceeding 100'000).
-
-As with the work by Søgaard string matching techniques perform better than their unsupervised counterparts.
-
-Using domain knowledge and hierarchical information turned out to be helpful, especially in the case of pre-aligned vectors. However, hierarchical matching techniques show worse results for averaged Word2Vec and string similarity evaluated on translated category descriptions. For Word2Vec the results are insignificant (the p-value between hierarchical and non-hierarchical version for Fisher test is only 0.5). However, domain information may be even harmful for string matching (the p-value is less than 0.001). It may be explained by the fact that upper-level categories have two broad descriptions which may significantly differ in wording and thus it leads to mistakes at lower hierarchy grades. At lower hierarchy levels items tend to be described more exactly. Using hierarchy information is extremely helpful for pre-aligned vectors in a common space(p-value < 0.001). It removes the problem of being too general and increases accuracy. So for structured datasets like Wikipedia it may be helpful to include not only information about word distributions but also meta-information like connections between articles and their hierarchy.
+	\small
+	\caption{Taxonomy examples}
+	\label{table-taxonomies-results}		
+	\centering
+	\begin{tabular}{|l|l|l|}
+		\hline
+		{Method} & {Accuracy \%} \\ \hline
+		bottom-up hungarian & 47.5 \\ \hline
+		bottom-up greedy & 45 \\ \hline
+		top-down hungarian & 33 \\ \hline
+		top-down greedy & 25.5 \\
+		\hline
+	\end{tabular}
+\end{table}
+\section{Discussion}
 
 \section{Conclusion}
-In this work we have demonstrated several successful methods for unsupervised matching of unaligned national classification systems. 
+In this work we have demonstrated several successful methods for unsupervised cross-lingual matching of national product classification systems, we have also shown that the same methods can be used for unsupervised WordNet construction.
 
 The first method is completely unsupervised matching with the help of pre-matched averaged Word2Vec embeddings inferred from product categories descriptions. Pre-matching is done using MUSE library and Wikipedia FastText embeddings. On its own it achieves accuracy of 19.5\%. However, hierarchical level-by-level matching allows to increase accuracy up to 47.5\%.
 
@@ -405,12 +317,6 @@ However, our results show that it is possible to unsupervisedly create a nationa
 
 The results also hint on the idea that unsupervised dictionary alignment results may be so successful because of the parallel nature of Wikipedia (some articles may be direct translations of English ones). However, it requires further investigation.
 We also demonstrate that using structural and hierarchical dataset information may considerably improve matching results, what is applicable to many Internet-based datasets like Wikipedia.
-\section{General phrases}
-Using hierarchical information may be beneficial in a range of text classification tasks \cite{tax2vec} as well as in computer vision problems such as ImageNet \cite{hedging-bets}.
-
-It was also shown by Yang \citeyearpar{glomo} that using graph and hierarchical is beneficial for many downstream tasks such as SQuAD.
-
-There is a dedicated taxonomy matching competition Ontology Alignment Evaluation Initiative \cite{ontology-sota}.
 
 
 \bibliographystyle{acl_natbib}
