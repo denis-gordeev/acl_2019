@@ -233,7 +233,7 @@ Mappings made by all methods were manually annotated on random 5\% of examples a
 \subsection{Taxonomy matching}
 	\begin{table}[!htbp]
 	\small
-	\caption{Taxonomy examples}
+	\caption{Taxonomy matching results}
 	\label{table-taxonomies-results}		
 	\centering
 	\begin{tabular}{|l|l|l|}
@@ -250,9 +250,30 @@ Mappings made by all methods were manually annotated on random 5\% of examples a
 
 As can be seen from Table \ref{table-taxonomies-results} the hierarchical Hungarian
 method and bottom-up graph embedding representations both help in boosting the results of taxonomy matching. Still translated strings matching is quite a strong baseline which may be the preferred solution when there is a translation engine for the studied language. In the other case the procedure would be: first, to train word-embeddings using some corpora from a common domain (e.g. Wikipedia), then align them using MUSE or Vecmap. After that, those embeddings may be used to map category descriptions. It should be also noted that mappings annotated as wrong were not completely incorrect and were usually on topic (e.g. acids -> oils; engine maintenance -> auto body repair; sewage treatment equipment -> sewage treatment services).
-We get slightly worse results for string matching in comparison with \cite{gordeev-fruct} because we use a more rigid annotation procedure and rely on expert knowledge of the taxonomies. Thus, hierarchical information is of importance in our experiment.
+We get slightly worse results for string matching in comparison with \cite{gordeev-fruct} because we use a more rigid annotation procedure and rely on expert knowledge of the taxonomies. Thus, hierarchical information carries more importance in our experiment.
+\begin{table*}[ht]
+	\small
+	\centering
+	\caption{WordNet examples}
+	\label{table-wordnet-examples}		
+	\begin{tabular}{|l|l|l|l|}
+		
+		\hline
+		{Russian child} & {Russian parent} & English child & English parrent \\ \hline
+		\foreignlanguage{russian}{экспериментатор} (experimenter)& \foreignlanguage{russian}{физик} (physicist) & \foreignlanguage{russian}{experimenter} & \foreignlanguage{russian}{research worker.n.01} \\ \hline
+		\foreignlanguage{russian}{астрофизик} {astrophysicist} & \foreignlanguage{russian}{физик} & \foreignlanguage{russian}{astrophysicist} & \foreignlanguage{russian}{astronomer.n.01} \\ \hline
+		\foreignlanguage{russian}{биофизик} (biophysicist)& \foreignlanguage{russian}{физик} & \foreignlanguage{russian}{biophysicist} & \foreignlanguage{russian}{physicist.n.01} \\ \hline
+		
+		\foreignlanguage{russian}{рыба} (fish)& \foreignlanguage{russian}{лосось} (salmon) & \foreignlanguage{russian}{panfish} & \foreignlanguage{russian}{fish.n.02} \\ \hline
+		\foreignlanguage{russian}{краснопёрка} (redeye)& \foreignlanguage{russian}{лосось} (salmon) & \foreignlanguage{russian}{halibut} & \foreignlanguage{russian}{flatfish.n.01} \\ \hline
+		
+		\foreignlanguage{russian}{буксир} (tow)& \foreignlanguage{russian}{катер} (motorboat) & tow & draw.n.09 \\ \hline
+		\foreignlanguage{russian}{катамаран} (catamaran)& \foreignlanguage{russian}{катер} (motorboat) & catamaran & sailboat.n.01 \\ \hline
+		
+	\end{tabular}
+\end{table*}
 \begin{center}
-	\begin{table*}[t!]
+	\begin{table*}
 		\label{table-annotation}		
 		\small
 		\centering
@@ -282,41 +303,54 @@ We get slightly worse results for string matching in comparison with \cite{gorde
 		\end{tabular}
 	\end{table*}
 \end{center}
-\subsection{Wordnet construction}
-	\begin{table}[!htbp]
+
+\begin{table}[ht]
 	\small
-	\caption{Taxonomy examples}
-	\label{table-taxonomies-results}		
-	\centering
+	\caption{WordNet results}
+	\label{table-wordnet-results}		
 	\begin{tabular}{|l|l|l|}
+		
 		\hline
-		{Method} & {Accuracy \%} \\ \hline
-		bottom-up hungarian & 47.5 \\ \hline
-		bottom-up greedy & 45 \\ \hline
-		top-down hungarian & 33 \\ \hline
-		top-down greedy & 25.5 \\
+		{Method} & {F1-Score} \\ \hline
+		Universal Wordnet & 50.2 \\ \hline
+		Extended OpenMultilingual Wordnet & 53 \\ \hline
+		Khrobak & 67.6 \\ \hline
+		Cross-lingual embeddings & 66.1 \\
 		\hline
 	\end{tabular}
 \end{table}
-\section{Discussion}
+
+\subsection{Wordnet construction}
+
+
+
+As can be seen from Table \ref{table-wordnet-results} our results are slightly worse than the ones provided by Khronak. However, our algorithm does not require parallel dictionaries and thus is more applicable to low-resource languages.
+Also our method reveals hierarchical relations which are absent from English. For example, correctly matches experimenter and physicist because in Russian there is a special synset with this meaning (and their are not always research workers). Also sometimes hypernyms and homonyms get messed up and we get that 'salmon' is 'hypernym' for 'fish'.
+
+%14909  экспериментатор     физик    experimenter  research_worker.n.01    0.592080
+%15495       астрофизик     физик  astrophysicist       astronomer.n.01    0.783915
+%15587         биофизик     физик    biophysicist        physicist.n.01    0.702931
+%
+%4104          акула    лосось       bowfin          ganoid.n.01    0.586604
+%4115        косатка    лосось    snailfish     scorpaenoid.n.01    0.556610
+%13042       макрель    лосось        bream  saltwater_fish.n.01    0.637474
+%13060          рыба    лосось        squid         seafood.n.01    0.624945
+%13066   краснопёрка    лосось      panfish            fish.n.02    0.690515
+%13082        тюлень    лосось      halibut        flatfish.n.01    0.617393
+%
+%184      буксир     катер          tow       draw.n.09    0.571837
+%4709  катамаран     катер    catamaran   sailboat.n.01    0.563622
+
 
 \section{Conclusion}
 In this work we have demonstrated several successful methods for unsupervised cross-lingual matching of national product classification systems, we have also shown that the same methods can be used for unsupervised WordNet construction.
 
-The first method is completely unsupervised matching with the help of pre-matched averaged Word2Vec embeddings inferred from product categories descriptions. Pre-matching is done using MUSE library and Wikipedia FastText embeddings. On its own it achieves accuracy of 19.5\%. However, hierarchical level-by-level matching allows to increase accuracy up to 47.5\%.
+The first method taxonomy categories descriptions using a custom string similarity function. Russian category descriptions were converted to English using Google Translate. It performed reasonably well and achieved 41\% accuracy. However, this method is unlikely to be suitable for languages that have less resources and are more distant from English than Russian because of the worse search engine quality for such languages \cite{google-translate-rare}.
 
-The second method uses averaged Word2Vec inferred from translated product categories descriptions. As the translation engine we used Google Translate. In its non-hierarchical variant it achieves 44\% accuracy. However, this method is unlikely to be suitable for languages that have less resources and are more distant from English than Russian because of the worse search engine quality for such languages \cite{google-translate-rare}.
 
-The third method also uses machine translations, but instead of relying on Word2Vec embeddings it directly compares strings using our custom word-level similarity function. It achieves the best results (55\% accuracy) but because of its dependence on translated descriptions, it has the same limitations as the previous method.
+We demonstrate that using translation information from a pre-trained translation engine or using embeddings pre-aligned in a common space may help in solving this task. 
 
-We demonstrate that using translation information from a pre-trained translation engine or using embeddings pre-aligned in a common space may help in solving this task. However, it seems unlikely that it is possible to directly align categories vectors for national taxonomies because their domains are too different. Moreover, it turns out that even supervised matching techniques relying on partially matched dictionaries fail at this task. It may be attributed to the low number of categories.
-
-In our case general adversarial networks and analytical methods fail to properly align the studied manifolds, so it raises a question whether it is possible to unsupervisedly match national taxonomies for rare languages which lack any translation engines or parallel corpora. Moreover, we support issues raised by Søgaard et al. \cite{ruder-muse-limitations} and demonstrate that both MUSE and Vecmap do not achieve acceptable results both in the supervised and unsupervised mode for tiny datasets from different domains.
-
-However, our results show that it is possible to unsupervisedly create a national taxonomies matching model if there are corpora for both languages from the same domain (e.g. Wikipedia).
-
-The results also hint on the idea that unsupervised dictionary alignment results may be so successful because of the parallel nature of Wikipedia (some articles may be direct translations of English ones). However, it requires further investigation.
-We also demonstrate that using structural and hierarchical dataset information may considerably improve matching results, what is applicable to many Internet-based datasets like Wikipedia.
+We also use a similar method for automatic WordNet construction for the Russian language. We do not get a state-of-the-art result, yet our method does not require bilingual corpora and is, thus, more applicable to a wider range of languages.
 
 
 \bibliographystyle{acl_natbib}

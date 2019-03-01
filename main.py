@@ -315,13 +315,15 @@ def wordnet_to_df():
     for u_r in unique_ru:
         df[f"class{i}_ru"] == u_r
 
-    i = 8
+    i = 9
     group = df.groupby(f"class{i}_ru").count()
     group = group[group["class10_ru"] < 1000]["class10_ru"]
     words = group[group > 2].index
     for word in words:
         print(df[df[f"class{i}_ru"] == word][[
-            "class10_ru", "class9_ru"]])
+            "class10_ru", "class9_ru",
+            "class10_name", "class9_name",
+            "class9_sim"]])
 
     # save wordnet to csv
     df[[col for col in df.columns if
