@@ -66,12 +66,12 @@
 \begin{document}
 \maketitle
 \begin{abstract}
-There exist numerous structured text representations such as taxonomies, ontologies and lexical databases. Low-resource languages often lack such resources. In this paper we propose a method for matching and constructing ontologies, taxonomies and other forms of graph-trees with textual information using hierarchical information and cross-lingual embeddings.
+Low-resource languages often lack structured text representations (taxonomies, ontologies and lexical databases) or lag behind in their adoption. In this paper we propose a method for matching and constructing ontologies, taxonomies and other forms of graph-trees with textual information using hierarchical information and cross-lingual embeddings.
 \end{abstract}
 
 \section{Introduction}
 
-There are numerous structured information representations containing texts in forms of titles, descriptions or definitons. Among them we can name ontologies, taxonomies, lexical databases such as WordNet \cite{wordnet}. Many of them exist only for English. Many researchers have tried automatically converting such resources from English into their languages. Mostly attempts were focused on using machine translation engines, bilingual dictionaries or parallel corpora \cite{Khodak2017,NEALE18.1030}. All this resources are very rare except most popular languages. Some works used word embeddings, which proved to be a powerful tool for dense text representations after papers by Bengio \cite{bengio} and Mikolov \cite{mikolov-representations-2013}. However, first word vector representations models were monolingual only. Soon researchers proposed cross-lingual word embedding models \cite{mikolov-parallel,lazaridou-parallel}. Unfortunately, most of the early works in this domain relied on massive parallel corpora. This solution is not really applicable to low-resource languages due to the lack of available data.
+There are numerous structured information representations containing texts in forms of titles, descriptions or definitions: e.g. ontologies, taxonomies, and lexical databases such as WordNet \cite{wordnet}. Many of them exist only for English, and there have been just as many attempts by researchers to automatically convert such resources from English into their languages. Most attempts were focused on using machine translation engines, bilingual dictionaries or parallel corpora \cite{Khodak2017,NEALE18.1030}, and results for low resource languages have been scarce. Some works used word embeddings, which proved to be a powerful tool for dense text representations after papers by Bengio \cite{bengio} and Mikolov \cite{mikolov-representations-2013}. However, first word vector representations models were monolingual only. Soon researchers proposed cross-lingual word embedding models \cite{mikolov-parallel,lazaridou-parallel}. Unfortunately, most of the early works in this domain relied on massive parallel corpora. This solution is not feasible for low-resource languages due to severe lack of available data.
 
 Learning mappings between embeddings from different languages or sources has proven to be a rather efficient method for solving this problem to some extent \cite{ruder-survey}.
 
@@ -121,12 +121,12 @@ $$ W^* = argmin_W ||WX - Y||_F = UV^T$$
 where $UV^T$ is derived using singular value decomposition SVD$(YX^T) = U \Sigma V^T$
 This method is used iteratively with the default number of iterations in MUSE equal to 5. As Søgaard, Ruder and Vulić state Procrustes refinement relies on frequent word pairs to serve as reliable anchors.
 
-Conneau et al. also apply cross-domain similarity local scaling to reduce the hubness problem to which cross-lingual embeddings are prone to \cite{dinu}. It uses cosine distance between a source embedding and $k$-target embeddings (the default $k$ in MUSE is 10) instead of the usual cosine distance to generate a dictionary.
+Conneau et al. also apply cross-domain similarity local scaling to lessen the extent of hubness problem which cross-lingual embeddings are prone to \cite{dinu}. It uses cosine distance between a source embedding and $k$-target embeddings (the default $k$ in MUSE is 10) instead of the usual cosine distance to generate a dictionary.
 $$sim_{source/target} = \dfrac{1}{k}\sum_{i=1}^Kcos(x, nn_i)$$
 \small
 $$CSLS(x,y) = 2cos(x,y) - sim_{source}(x)  - sim_{target}(y)$$
 \normalsize
-Vecmap \cite{vecmap} is close in its idea to the Procrustes refinement, it computes SVD-factorization SVD$(YX^T) = U\Sigma V^T$ and replaces $X$ and $Y$ with new matrices $X' = U$ and $Y' = V$. The authors also propose normalization and whitening (sphering transformation). After applying whitening new matrices are equal to:
+Vecmap \cite{vecmap} is close in its idea to the Procrustes refinement, it computes SVD-factorization SVD$(YX^T) = U\Sigma V^T$ and replaces $X$ and $Y$ with new matrices $X' = U$ and $Y' = V$. The authors also propose normalization and whitening (sphering) transformation. After applying whitening new matrices are equal to:
 $X' = (X^TX)^{-\tfrac{1}{2}}$ and $Y' = (Y^TY)^{-\tfrac{1}{2}}$
 
 Jawanpuria et al. \cite{jawanpuria} propose a method which is also based on SVD-factorization but in smooth Riemannian manifolds instead of Euclidean space.
@@ -134,7 +134,7 @@ Jawanpuria et al. \cite{jawanpuria} propose a method which is also based on SVD-
 Ivan Vulić, Wim De Smet and Marie-Francine Moens  used BiLDA for cross-language information retrieval which is similar to the task of classification matching. In this LDA variant topic distributions are considered to be equivalent for same articles from different languages \cite{bilda}. However, in our case this method is unlikely to perform because LDA requires longer texts \cite{short-lda}. Word embeddings methods are preferable for short texts \cite{maslova-potapov}.
 
 \subsection{Simplistic use of word embeddings for graph representations}
-In this paper we use a very simple baseline for representing graphs. We represent higher levels of hierarchy as averaged embeddings of lower levels, thus we use a bottom-up approach. We used cross-lingual embeddings in a single vector space provided by the authors of MUSE (i.e. vectors for "cat" and its Russian translation \foreignlanguage{russian}{"кот"} are close to each other). Using hierarchical information may be beneficial in a range of text classification tasks \cite{tax2vec} as well as in computer vision problems such as ImageNet \cite{hedging-bets}. It was also shown by Yang \citeyearpar{glomo} that using graph and hierarchical is beneficial for many downstream tasks such as SQuAD.
+In this paper we use a very simple baseline for representing graphs. We represent higher levels of hierarchy as averaged embeddings of lower levels, thus we use a bottom-up approach. We used cross-lingual embeddings in a single vector space provided by the authors of MUSE (i.e. vectors for "cat" and its Russian translation \foreignlanguage{russian}{"кот"} are close to each other). Using hierarchical information may be beneficial for a range of text classification tasks \cite{tax2vec} as well as computer vision problems such as ImageNet \cite{hedging-bets}. It was also shown by Yang \citeyearpar{glomo} that using knowledge of graphs and hierarchies is beneficial for many downstream tasks such as SQuAD.
 
 
 %\subsection{Using text information in graph embeddings}
@@ -160,7 +160,7 @@ We use a hierarchical version of the Hungarian algorithm. The algorithm takes as
 
 4. Goto step 2.
 
-For each level of the hierarchy we repeat the algorithm. For nodes that were invalidated at the previous (because they correspond to another branch of the tree) similarities are set to 0. If yet they are chosen by the algorithm we consider that this node is not present in the graph. Thus, we overcome the problems between taxonomies/ontologies.
+For each level of the hierarchy we repeat the algorithm. For nodes that were invalidated at the previous (because they correspond to another branch of the tree) similarities are set to 0. If they are still chosen by the algorithm we consider that this node is not present in the graph. Thus, we overcome the mismatches between taxonomies/ontologies.
 %\begin{lstlisting}[language=Python]
 %M: similarity_matrix
 %prime_rows = []
@@ -198,9 +198,9 @@ For each level of the hierarchy we repeat the algorithm. For nodes that were inv
 \end{center}
 
 In this study we use two national product classifications as examples of cross-lingual taxonomies.
-Both NIGP-5 and OKPD2 are used to classify products and services. However, they differ in the way products are described (two-level vs four-level hierarchy) as well as in the amount of described categories (8700 for NIGP-5 \cite{wiki-nigp} vs 17416 for OKPD2 \cite{wiki-okpd}). It means that two graphs that might describe these product classifications are not isomorphic (contain the same number of graph vertices connected in the same way and may be transformed into one another) by itself.  It does not imply that they may not be made isomorphic by disregarding some vertices (e.g. using some threshold or similarity measure) and then aligned using graph matching methods but it complicates their alignment. It should be also noted that some notions from one classification may not exist in the other (e.g. popular in Russia curd snacks and traditional Russian felt footwear 'valenki' do not appear in NIGP-5).
+Both NIGP-5 and OKPD2 are used to classify products and services. However, they differ in the way products are described (two-level vs four-level hierarchy) as well as in the amount of described categories (8700 for NIGP-5 \cite{wiki-nigp} vs 17416 for OKPD2 \cite{wiki-okpd}). It means that two graphs that might describe these product classifications are not isomorphic (contain the same number of graph vertices connected in the same way and may be transformed into one another).  While it does not imply that they may not be made isomorphic by disregarding some vertices (e.g. using some threshold or similarity measure) and then aligned using graph matching methods, it complicates their alignment. It should be also noted that some notions from one classification may be completely absent from the other (e.g. curd snacks, popular in Russia, or traditional Russian felt footwear 'valenki' do not appear in NIGP-5).
 
-The data for the Russian taxonomy OKPD2 was collected from them Russian state website Goszakupki \footnote{www.zakupki.gov.ru}, which contains purchases made by state entities.
+The data for the Russian taxonomy OKPD2 was collected from Russian state website Goszakupki \footnote{www.zakupki.gov.ru}, which contains data on procurement awards by government entities.
 The data for the US national classification was collected from the US state website data.gov \footnote{https://www.data.gov/}. We have used only marketplace bids by the state of Maryland because they were the only found entries that contained bids descriptions not matching code-descriptions that are required for training Doc2Vec. Extracts from taxonomies can be seen in Table \ref{table-taxonomies}.
 
 \subsection{WordNet}
