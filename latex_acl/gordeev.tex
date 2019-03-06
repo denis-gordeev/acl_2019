@@ -239,7 +239,7 @@ Mappings made by all methods were manually annotated on random 5\% of examples a
 	\begin{tabular}{|l|l|l|}
 	\hline
 	{Method} & {Accuracy \%} \\ \hline
-	bottom-up hungarian & 47.5 \\ \hline
+	bottom-up hungarian & 47.5 \\ \hline2
 	bottom-up greedy & 45 \\ \hline
 	top-down hungarian & 33 \\ \hline
 	top-down greedy & 25.5 \\ \hline
@@ -325,7 +325,7 @@ We get slightly worse results for string matching in comparison with \cite{gorde
 
 
 As can be seen from Table \ref{table-wordnet-results} our results are slightly worse than the ones provided by Khronak. However, our algorithm does not require parallel dictionaries and thus is more applicable to low-resource languages.
-Also our method reveals hierarchical relations which are absent from English. For example, correctly matches experimenter and physicist because in Russian there is a special synset with this meaning (and their are not always research workers). Also sometimes hypernyms and homonyms get messed up and we get that 'salmon' is 'hypernym' for 'fish'.
+Also our method reveals hierarchical relations which are absent from English. For example, correctly matches experimenter and physicist because in Russian there is a special synset with this meaning (and they are not always research workers). Also sometimes hypernyms and homonyms get messed up and we get that 'salmon' is 'hypernym' for 'fish'.
 
 %14909  экспериментатор     физик    experimenter  research_worker.n.01    0.592080
 %15495       астрофизик     физик  astrophysicist       astronomer.n.01    0.783915

@@ -5,9 +5,55 @@ from nltk import word_tokenize
 from nltk.corpus import wordnet
 from scipy.optimize import linear_sum_assignment
 from gensim.models import KeyedVectors
+import networkx as nx
+from node2vec import Node2Vec
 
 from utils import read_nigp_csv_pd, get_averaged_vectors, read_okpd_pd,\
     matrices_cosine_distance, get_top_indices
+
+
+def add_graph_vec_to_df(graph_df):
+    graph_df = graph_df.reset_index(drop=True)
+    graph = nx.Graph()
+    # col_names vary only in ints 'class0_code', 'class1_code', 'class2_code'
+
+    # the copy will be local only
+    # but if use global df while debugging in the console
+    cols = [col for col in graph_df.columns if "_code" in col]
+    cols = sorted(cols)
+    for col_i in range(len(cols) - 1):
+        col = cols[col_i]
+        col_next = cols[col_i + 1]
+        print(col, col_next)
+        all_nodes = set()
+        for this_col in [col, col_next]:
+            nodes = graph_df[this_col].drop_duplicates().dropna().values
+            nodes = set(nodes)
+            all_nodes.update(nodes)
+        graph.add_nodes_from(all_nodes)
+        edges = graph_df[[col, col_next]].values
+        edges = [list(e) for e in edges]
+        graph.add_edges_from(edges)
+
+    node2vec = Node2Vec(
+        graph, dimensions=64, walk_length=10, num_walks=10, workers=1)
+    model = node2vec.fit(window=10, min_count=1, batch_words=4)
+    print(graph_df.columns)
+    for col_i, col in enumerate(cols):
+        vector_col = f"class{col_i}_vectors"
+        code_col = f"class{col_i}_code"
+        index = graph_df[vector_col].dropna().index
+        for ind_i, ind in enumerate(index):
+            print("\t", col, ind_i, end="\r")
+            row = graph_df.loc[ind]
+            if len(row.shape) > 1:
+                row = row[:1]
+            code = row[code_col]
+            vector = row[vector_col]
+            graph_vec = model[code]
+            graph_df.loc[ind, vector_col] = np.concatenate(
+                [vector / 4, graph_vec])
+    return graph_df
 
 
 def get_vectors_from_name(name_split: pd.DataFrame, model):
@@ -168,7 +214,7 @@ def annotate(
     if len(checking) < match_df.shape[0]:
         checking += [None] * (match_df.shape[0] - len(checking))
     match_df["check"] = checking
-    match_df.to_csv(f"match_df_{level}_{algorithm}_{vector_method}.csv")
+    match_df.to_csv(f"match_df_{level}_{algorithm}_{vector_method}_vec.csv")
     print("accuracy is", match_df.check.astype(float).sum())
     return match_df
 
@@ -335,7 +381,7 @@ def wordnet_to_df():
 def main():
     vector_methods = ["topdown", "bottomup"]
     algorithms = ["hungarian", "greedy"]
-    done_vector_methods = ["topdown"]
+    done_vector_methods = ["bottomup"]
     for v_m in vector_methods:
         print(v_m)
         if v_m in done_vector_methods:
@@ -347,8 +393,10 @@ def main():
             print(lang)
             taxonomy = load_taxonomy(lang, v_m)
             taxonomy["lang"] = lang
+            taxonomy = add_graph_vec_to_df(taxonomy)
             df = df.append(taxonomy)
             df = df.reset_index(drop=True)
+
         for a in algorithms:
             print(a)
             match_df = None
