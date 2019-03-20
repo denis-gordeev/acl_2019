@@ -36,7 +36,7 @@ def add_graph_vec_to_df(graph_df):
         graph.add_edges_from(edges)
 
     node2vec = Node2Vec(
-        graph, dimensions=64, walk_length=10, num_walks=10, workers=1)
+        graph, dimensions=300, walk_length=10, num_walks=10, workers=1)
     model = node2vec.fit(window=10, min_count=1, batch_words=4)
     print(graph_df.columns)
     for col_i, col in enumerate(cols):
@@ -51,8 +51,7 @@ def add_graph_vec_to_df(graph_df):
             code = row[code_col]
             vector = row[vector_col]
             graph_vec = model[code]
-            graph_df.loc[ind, vector_col] = np.concatenate(
-                [vector / 4, graph_vec])
+            graph_df.loc[ind, vector_col] = vector + graph_vec
     return graph_df
 
 
@@ -214,7 +213,8 @@ def annotate(
     if len(checking) < match_df.shape[0]:
         checking += [None] * (match_df.shape[0] - len(checking))
     match_df["check"] = checking
-    match_df.to_csv(f"match_df_{level}_{algorithm}_{vector_method}_vec.csv")
+    match_df.to_csv(
+        f"annotations/match_df_{level}_{algorithm}_{vector_method}_vec.csv")
     print("accuracy is", match_df.check.astype(float).sum())
     return match_df
 
@@ -376,6 +376,39 @@ def wordnet_to_df():
         any(w in col for w in ("_ru", "_sim", "_col", "name"))
         ]].to_csv(f"wordnet3_{lang}_without_duplicates.csv")
     return df
+
+
+def score_khodak(path):
+    with open("other_works/pawn/ru_matches.txt") as f:
+        r = f.read()
+    # split by POS
+    r = r.split("#")
+    # leave only NOUNS
+    r = r[1]
+    r = r.split("\n")
+    r = [l.split("\t") for l in r]
+    wordnet_list = list()
+    key = None
+    for l in r:
+        if not l[0]:
+            continue
+        elif ":" in l[0]:
+            key = l[1]
+        else:
+            wordnet_list.append([key] + l)
+    khodak = pd.DataFrame(
+        wordnet_list, columns=["ru", "score", "synset", "definition"])
+    my_df = pd.read_csv("annotations/wordnet3_ru_without_duplicates.csv")
+    t_p = 0
+    f_p = 0
+    t_n = 0
+    f_n = 0
+    for index, row in khodak.iterrows():
+        if row["ru"] in my_df["class10_ru"]:
+            print(row["ru"])
+        else:
+            print(row["ru"])
+    pass
 
 
 def main():
