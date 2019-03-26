@@ -1,15 +1,22 @@
+import itertools
+import random
+import json
+
 import numpy as np
 import pandas as pd
 
 from nltk import word_tokenize
 from nltk.corpus import wordnet
 from scipy.optimize import linear_sum_assignment
+from sklearn.model_selection import train_test_split
 from gensim.models import KeyedVectors
 import networkx as nx
 from node2vec import Node2Vec
 
 from utils import read_nigp_csv_pd, get_averaged_vectors, read_okpd_pd,\
     matrices_cosine_distance, get_top_indices
+from utils_d.ml_models import CnnLstm
+from utils_d.ml_utils import create_word_index
 
 
 def add_graph_vec_to_df(graph_df):
@@ -480,7 +487,109 @@ def main():
                 match_df = annotate(match_df, a, level, v_m)
 
 
+def april_new():
+    lang = "en"
+    eng_emb = load_embeddings(lang)
+    eng_words = {w for w in wordnet.all_synsets()}
+    eng_words = {w for w in eng_words if w.name().split(".")[0] in eng_emb}
+
+    wordnet_dict = dict()
+    for e_i, e in enumerate(eng_words):
+        print("\t", e_i, end="\r")
+        hyponyms = e.hyponyms()
+        hypernyms = e.hypernyms()
+        e = e.name().split(".")[0]
+        if hyponyms:
+            hyponyms = {h.name().split(".")[0] for h in hyponyms}
+            hyponyms = {h for h in hyponyms if h in eng_emb}
+            if e not in wordnet_dict:
+                wordnet_dict[e] = hyponyms
+            else:
+                wordnet_dict[e].update(hyponyms)
+        if hypernyms:
+            hypernyms = {h.name().split(".")[0] for h in hypernyms}
+            hypernyms = {h for h in hypernyms if h in eng_emb}
+            for h in hypernyms:
+                if h not in wordnet_dict:
+                    wordnet_dict[h] = {e}
+                else:
+                    wordnet_dict[h].add(e)
+    all_words = set(wordnet_dict.keys())
+    for v in wordnet_dict.values():
+        all_words.update(set(v))
+    # random choise does not accept sets
+    all_words = list(all_words)
+    word_index = {w: i for i, w in enumerate(all_words)}
+    word_matrix = [eng_emb[w] for w in all_words]
+    word_matrix = np.array(word_matrix)
+    with open('w2v/word_index.json', 'w') as outfile:
+        json.dump(word_index, outfile)
+    wordnet_dict = {word_index[k]: {word_index[s] for s in v}
+                    for k, v in wordnet_dict.items()}
+    with open('w2v/wordnet_dict.json', 'w') as outfile:
+        json.dump({k: list(v) for k, v in wordnet_dict.items()}, outfile)
+    x = []
+    y = []
+    # dataset consists of:
+    # Class 0: hypernym hyponym
+    # Class 1: hyponym hyponym
+    # Class 2: hypernym random_word
+    #          hyponym random_word
+    # all three classes are +/- balanced
+    j = 0
+    for hypernym, hyponyms in wordnet_dict.items():
+        print("\t", j, len(wordnet_dict), end="\r")
+        j += 1
+        for h in hyponyms:
+            x.append((hypernym, h))
+            y.append(0)
+        combinations = list(itertools.combinations(hyponyms, 2))
+
+        # to keep the dataset balanced
+        random.shuffle(combinations)
+        combinations = combinations[:len(hyponyms)]
+        x += combinations
+        y += [1] * len(combinations)
+        for i in range(len(combinations)):
+            done = False
+            while not done:
+                random_word = random.choice(all_words)
+                random_word = word_index[random_word]
+                if random_word == hypernym or random_word in hyponyms:
+                    continue
+                else:
+                    if i <= int(len(combinations) / 2):
+                        x.append((hypernym, random_word))
+                    else:
+                        x.append((random.sample(hyponyms, 1)[0], random_word))
+                    y.append(2)
+                    done = True
+    x = np.array(x)
+    y = np.array(y)
+    x_train, x_test, y_train, y_test = train_test_split(
+        x, y, test_size=0.2, random_state=42)
+
+    kwargs = {
+        "voc_size": len(all_words) - 1,
+        "sequence_len": 2,
+        "vec_len": eng_emb.vector_size,
+        "categ_nums": [3],
+        "name": "w2v/",
+        "use_generator": False,
+        "x_train": x_train,
+        "x_test": x_test,
+        "y_train": y_train,
+        "y_test": y_test,
+        "embedding_matrix": word_matrix,
+        "layers_multiplier": 1,
+        "kernel_size": 1,
+        "pool_size": 1,
+        "trainable_embeddings": False
+    }
+    cnn = CnnLstm(**kwargs)
+    model = cnn.cnn_lstm_classification()
+    return model
+
+
 if __name__ == "__main__":
     main()
-
-
