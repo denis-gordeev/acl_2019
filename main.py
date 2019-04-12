@@ -1334,7 +1334,7 @@ def april_khodak():
                              y_train, y_test, f"synsets/main2",
                              k_fold=USE_KFOLD)
         nn_models = k_fold_training(x_train, y_train, keras_model, num_folds=4)
-        ensemble.models += nn_models
+        ensemble = ensemble[0]
     else:
         gbm = train_gbm(x_train, x_test,
                         y_train, y_test, f"synsets/main2",
