@@ -1,14 +1,19 @@
+import os
 import itertools
 import random
 import pickle
 import json
 import re
+import time
 import multiprocessing as mp
 import numpy as np
 from scipy import spatial
 import pandas as pd
 import tensorflow as tf
 from gensim.models import KeyedVectors
+from datetime import datetime
+
+from sklearn.feature_extraction.text import TfidfVectorizer
 
 from keras.layers import Dense, Dropout, Input
 from keras.models import Model
@@ -16,11 +21,12 @@ from keras.callbacks import EarlyStopping
 
 from nltk import word_tokenize
 from nltk.corpus import wordnet
+from nltk.corpus import stopwords
 import pymorphy2
 
 from scipy.optimize import linear_sum_assignment
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score
+from sklearn.metrics import accuracy_score, f1_score
 from sklearn.metrics import confusion_matrix
 
 import networkx as nx
@@ -28,6 +34,7 @@ from node2vec import Node2Vec
 
 from utils import read_nigp_csv_pd, get_averaged_vectors, read_okpd_pd,\
     matrices_cosine_distance, get_top_indices
+from utils_d.utils import text_pipeline
 from utils_d.ml_models import CnnLstm, train_lgb
 from utils_d.ml_utils import create_word_index
 
@@ -204,7 +211,7 @@ def get_vectors_from_df(df, lang, class_id):
 def annotate(
         match_df, algorithm, level, vector_method="topdown", limit=100):
     checking = []
-    annotation_values = ["1", "0", "0.5"]
+    annotation_values = ["1", "0", "0.5", "skip"]
     limit = 100
     # try:
     #     match_df = pd.read_csv(
@@ -229,7 +236,8 @@ def annotate(
                 annotation = "0"
             if annotation not in annotation_values:
                 print("wrong value")
-        checking.append(annotation)
+        if annotation != "skip":
+            checking.append(annotation)
     if len(checking) < match_df.shape[0]:
         checking += [None] * (match_df.shape[0] - len(checking))
     match_df["check"] = checking
@@ -500,16 +508,27 @@ def main():
                 match_df = annotate(match_df, a, level, v_m)
 
 
-def get_ru_relations(w0_i, word_0, gbm, word_matrix, allowed_words, emb_norm):
-    print("\t", w0_i, end="\r")
+def get_ru_relations(
+        w0_i, word_0, gbm, word_matrix, allowed_words,
+        emb_norm, parts_of_speech,
+        pos_filter=False):
+    print("\t", w0_i, word_0, end="\r")
     emb_0 = word_matrix[w0_i]
     # distances = 1 - spatial.distance.cosine(emb_0, emb_1)
-    distances = np.matmul(emb_0, word_matrix.T)
-    norm = emb_norm[w0_i] * emb_norm.T
+    if pos_filter:
+        pos = parts_of_speech[w0_i]
+        pos_mask = parts_of_speech == pos
+    else:
+        pos_mask = [i for i in range(len(allowed_words))]
+    pos_matrix = word_matrix[pos_mask]
+    pos_words = allowed_words[pos_mask]
+    distances = np.matmul(emb_0, pos_matrix.T)
+
+    norm = emb_norm[w0_i] * emb_norm[pos_mask].T
     distances = distances.T / norm
     distances = distances[0]
     embs_1 = [list(emb_0) + list(word_matrix[j]) + [distances[j]]
-              for j in range(len(allowed_words))]
+              for j in range(len(pos_words))]
     embs_1 = np.array(embs_1)
     preds = gbm.predict(embs_1)
     max_preds = np.argmax(preds, axis=1)
@@ -517,21 +536,21 @@ def get_ru_relations(w0_i, word_0, gbm, word_matrix, allowed_words, emb_norm):
     word_hypernyms = []
     word_synonyms = []
     for s_i, s in enumerate(scores):
-        if s > 0.5 and max_preds[s_i] in (0, 1, 3):
+        if s >= 0.5 and max_preds[s_i] in (0, 1, 3):
             pred = max_preds[s_i]
             if pred == 0:
-                word_1 = allowed_words[s_i]
+                word_1 = pos_words[s_i]
                 word_hypernyms.append((word_0, word_1, s))
-                print("hyp", word_0, word_1, s)
+                print("hyp", word_0, word_1, s, pred)
             elif pred == 1:
-                word_1 = allowed_words[s_i]
+                word_1 = pos_words[s_i]
                 word_synonyms.append((word_0, word_1, s))
-                print("syn", word_0, word_1, s)
+                print("syn", word_0, word_1, s, pred)
             # reverse hypernyms
             elif pred == 3:
-                word_1 = allowed_words[s_i]
+                word_1 = pos_words[s_i]
                 word_hypernyms.append((word_1, word_0, s))
-                print("hyp", word_1, word_0, s)
+                print("hyp", word_1, word_0, s, pred)
     return word_hypernyms, word_synonyms
 
 
@@ -552,19 +571,135 @@ def analyse_collocations(eng_emb):
     print(np.median(sim))
 
 
+def create_syn_combinations(input_iter):
+    combinations = list(itertools.combinations(input_iter, 2))
+    combinations = combinations[:int(len(input_iter) * 1.5)]
+    combinations = [c + (1,) for c in combinations]
+    return combinations
+
+
+def train_gbm(x_train, x_test, y_train, y_test, name):
+    objective = 'multiclass'
+    if len(y_train.shape) > 1:
+        categ_nums = np.unique(y_train).shape[0]
+    else:
+        categ_nums = None
+        objective = "binary"
+    gbm_params = {
+        'objective': objective,
+        'max_depth': 8,
+        'num_leaves': 12,
+        'subsample': 0.8,
+        'learning_rate': 0.1,
+        'estimators': 1000,
+        'num_trees': 10000,
+        'num_class': categ_nums,
+        'early_stopping_rounds': 10,
+        'verbose': 0}
+    gbm, score = train_lgb(
+        x_train, x_test, y_train, y_test, k_fold=False, params=gbm_params)
+    gbm = gbm[0]
+    pickle.dump(gbm, open(f"{name}gbm_{score}.pcl", "wb"))
+    preds = gbm.predict(x_test)
+    if categ_nums:
+        for threshold in (0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.95, 0.99):
+            print(threshold)
+
+            mask = [i for i in range(len(preds)) if any(preds[i] > threshold)]
+            mask_preds = preds[mask]
+            mask_preds = np.argmax(mask_preds, axis=1)
+            mask_y = y_test[mask]
+            print("acc", accuracy_score(mask_y, mask_preds))
+            print("f1", f1_score(mask_y, mask_preds))
+            print(confusion_matrix(mask_y, mask_preds))
+    else:
+        for threshold in range(1, 10):
+            threshold = threshold / 10
+            print(threshold)
+            mask_preds = preds > threshold
+            mask_preds = mask_preds.astype(int)
+            print("acc", accuracy_score(y_test, mask_preds))
+            print("f1", f1_score(y_test, mask_preds))
+    return gbm
+
+
+def train_cnn(
+        all_words, eng_emb, x_train, x_test, y_train, y_test, word_matrix):
+    kwargs = {
+        "voc_size": len(all_words) - 1,
+        "sequence_len": 2,
+        "vec_len": eng_emb.vector_size,
+        "categ_nums": [3],
+        "name": "w2v/",
+        "use_generator": False,
+        "x_train": x_train,
+        "x_test": x_test,
+        "y_train": y_train,
+        "y_test": y_test,
+        "embedding_matrix": word_matrix,
+        "layers_multiplier": 1,
+        # "kernel_size": 1,
+        # "pool_size": 1,
+        "trainable_embeddings": False,
+        "use_embeddings": False
+    }
+    cnn = CnnLstm(**kwargs)
+    model = cnn.cnn_lstm_classification()
+    return model
+
+
 def april_new():
     lang = "en"
+    # bad wording; but if False - then only
+    #   hypernym: hyponym
+    #   hypernym: random_word
+    # wordnet_langs = ["fin", "pol"]
+    # wordnet.synsets("kod_pocztowy", lang="pol")[0].hypernyms()
+    parse_synonyms = True
+    zaliznak_filter = True
+    pos_filter = False
+    nouns_only = False
+    morphy_filter = True
+    now = datetime.now().isoformat().split(".")[0]
+    folder = f"models/{now}"
+    if nouns_only:
+        folder += "_nouns"
+    os.mkdir(folder)
     eng_emb = load_embeddings(lang)
     # analyse_collocations(eng_emb)
     # 117659 words
     eng_words = {w for w in wordnet.all_synsets()}
     # 87943
-    eng_words = {w for w in eng_words if w.hyponyms() or w.hypernyms()}
-    # 43647 synsets; 24099 words
+
+    # eng_words = {w for w in eng_words if w.hyponyms() or w.hypernyms()}
+
+    # 43647 synsets; 24099 words -> 63314
     eng_words = {w for w in eng_words if
                  w.name().split(".")[0] in eng_emb.vocab}
+    pos_dataset = {(w.pos(), w.name().split(".")[0]) for w in eng_words}
+    pos_df = pd.DataFrame(pos_dataset, columns=["y", "x"])
+    pos_x = [eng_emb[w] for w in pos_df["x"].values]
+    pos_x = np.array(pos_x)
+    pos_y = pos_df["y"].astype("category")
+    pos_y = pos_y.cat.codes.values
+    pos_x_train, pos_x_test, pos_y_train, pos_y_test = train_test_split(
+        pos_x, pos_y,
+        test_size=0.2, random_state=42, stratify=pos_df["y"])
+    pos_gbm = train_gbm(pos_x_train, pos_x_test, pos_y_train, pos_y_test,
+                        f"{folder}/pos_")
     # eng_words = {w for w in eng_words if w.name().split(".")[0]}
+
+    # sets are slow for random.sample
+    sample_words = list({w.name().split(".")[0] for w in eng_words})
     wordnet_dict = dict()
+    x = []
+    # dataset consists of:
+    # Class 0: hypernym hyponym
+    # Class 1: hyponym hyponym
+    # Class 2: hypernym random_word
+    #          hyponym random_word
+    # Class 3: hyponym hypernym
+    # all three classes are +/- balanced
     for e_i, e in enumerate(eng_words):
         print("\t", e_i, end="\r")
         hyponyms = e.hyponyms()
@@ -577,121 +712,85 @@ def april_new():
                 wordnet_dict[e] = hyponyms
             else:
                 wordnet_dict[e].update(hyponyms)
+            for h in hyponyms:
+                # hypernym hyponym
+                x.append((e, h, 0))
+                if parse_synonyms:
+                    # hyponym hypernym
+                    x.append((h, e, 3))
+            if parse_synonyms:
+                # hyponym hyponym
+                combinations = create_syn_combinations(hyponyms)
+                x += combinations
         if hypernyms:
             hypernyms = {h.name().split(".")[0] for h in hypernyms}
             hypernyms = {h for h in hypernyms if h in eng_emb}
             for h in hypernyms:
+                # hypernym hyponym
+                x.append((h, e, 0))
+                if parse_synonyms:
+                    # hyponym hypernym
+                    x.append((e, h, 3))
                 if h not in wordnet_dict:
                     wordnet_dict[h] = {e}
                 else:
                     wordnet_dict[h].add(e)
+            # hyponym hyponym
+            if parse_synonyms:
+                combinations = create_syn_combinations(hypernyms)
+                x += combinations
+
+    x = set(x)
+    # add some random words to the algorithm
+    for e_i, e in enumerate(eng_words):
+        print("\t", e_i, end="\r")
+        related = {w.name().split(".")[0] for w in e.hypernyms()}
+        related.update({w.name().split(".")[0] for w in e.hyponyms()})
+        e = e.name().split(".")[0]
+        word = random.choice(sample_words)
+        if word not in related:
+            if e_i % 2 == 0:
+                x.add((e, word, 2))
+            else:
+                x.add((word, e, 2))
+
+    df = pd.DataFrame(x, columns=[1, 2, "target"])
+    df = df[df[1] != df[2]]
+    df.groupby("target").count()[1]
+
     # 20378 words
-    all_words = set(wordnet_dict.keys())
-    for v in wordnet_dict.values():
-        all_words.update(set(v))
-    # random choise does not accept sets
+    all_words = set(df[1].values).union(set(df[2].values))
+
     # transform words into their ids
     all_words = list(all_words)
     word_index = {w: i for i, w in enumerate(all_words)}
     word_matrix = [eng_emb[w] for w in all_words]
     word_matrix = np.array(word_matrix)
-    with open('w2v/word_index.json', 'w') as outfile:
+    with open(f'{folder}/word_index_syn{parse_synonyms}.json', 'w') as outfile:
         json.dump(word_index, outfile)
     wordnet_dict = {word_index[k]: {word_index[s] for s in v}
                     for k, v in wordnet_dict.items()}
-    with open('w2v/wordnet_dict.json', 'w') as outfile:
+    with open(f'{folder}/wordnet_dict_syn{parse_synonyms}.json', 'w')\
+            as outfile:
         json.dump({k: list(v) for k, v in wordnet_dict.items()}, outfile)
-    x = []
-    y = []
-    # dataset consists of:
-    # Class 0: hypernym hyponym
-    # Class 1: hyponym hyponym
-    # Class 2: hypernym random_word
-    #          hyponym random_word
-    # Class 3: hyponym hypernym
-    # all three classes are +/- balanced
-    j = 0
-    for hypernym, hyponyms in wordnet_dict.items():
-        print("\t", j, len(wordnet_dict), end="\r")
-        j += 1
-        for h in hyponyms:
-            x.append((hypernym, h))
-            y.append(0)
-            x.append((h, hypernym))
-            y.append(3)
-        combinations = list(itertools.combinations(hyponyms, 2))
 
-        # to keep the dataset balanced
-        random.shuffle(combinations)
-        combinations = combinations[:len(hyponyms) * 2]
-        x += combinations
-        y += [1] * len(combinations)
-        for i in range(len(combinations)):
-            random_words = random.sample(all_words, 10)
-            random_words = [word_index[r] for r in random_words]
-            random_words = [w for w in random_words
-                            if w not in hyponyms and w != hypernym]
-            x.append((hypernym, random_words[0]))
-            y.append(2)
-            x.append((random.sample(hyponyms, 1)[0], random_words[1]))
-            y.append(2)
     # words to their embeddings
+    x = df[[1, 2]].values
+    y = df["target"].values
+    x = [[word_index[w] for w in row] for row in x]
     x = [[word_matrix[t] for t in row] for row in x]
     cosine = [1 - spatial.distance.cosine(r[0], r[1]) for r in x]
     x = [list(t[0]) + list(t[1]) + [cosine[t_i]] for t_i, t in enumerate(x)]
     x = np.array(x)
-    # x = np.array([np.concatenate(row) for row in x])
-    y = np.array(y)
+
     x_train, x_test, y_train, y_test = train_test_split(
         x, y, test_size=0.2, random_state=42)
 
-    # kwargs = {
-    #     "voc_size": len(all_words) - 1,
-    #     "sequence_len": 2,
-    #     "vec_len": eng_emb.vector_size,
-    #     "categ_nums": [3],
-    #     "name": "w2v/",
-    #     "use_generator": False,
-    #     "x_train": x_train,
-    #     "x_test": x_test,
-    #     "y_train": y_train,
-    #     "y_test": y_test,
-    #     "embedding_matrix": word_matrix,
-    #     "layers_multiplier": 1,
-    #     # "kernel_size": 1,
-    #     # "pool_size": 1,
-    #     "trainable_embeddings": False,
-    #     "use_embeddings": False
-    # }
-    # cnn = CnnLstm(**kwargs)
-    # model = cnn.cnn_lstm_classification()
-    gbm_params = {
-        'objective': 'multiclass',
-        'max_depth': 8,
-        'num_leaves': 12,
-        'subsample': 0.8,
-        'learning_rate': 0.1,
-        'estimators': 1000,
-        'num_trees': 10000,
-        'num_class': 4,
-        'early_stopping_rounds': 10,
-        'verbose': 0}
-    gbm, score = models, score = train_lgb(
-        x_train, x_test, y_train, y_test, k_fold=False, params=gbm_params)
-    gbm = gbm[0]
-    pickle.dump(gbm, open(f"gbm_{score}.pcl", "wb"))
-    preds = gbm[0].predict(x_test)
-    for threshold in (0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.95, 0.99):
-        print(threshold)
-        mask = [i for i in range(len(preds)) if any(preds[i] > threshold)]
-        mask_preds = preds[mask]
-        mask_preds = np.argmax(mask_preds, axis=1)
-        mask_y = y_test[mask]
-        print(accuracy_score(mask_y, mask_preds))
-        print(confusion_matrix(mask_y, mask_preds))
+    # cnn_model = train_cnn(
+    #     all_words, eng_emb, x_train, x_test, y_train, y_test, word_matrix)
+    gbm = train_gbm(x_train, x_test, y_train, y_test, f"{folder}/main")
 
     ru_emb = load_embeddings("ru")
-    morph = pymorphy2.MorphAnalyzer()
 
     # 200000 words
     allowed_words = list(ru_emb.vocab)
@@ -716,31 +815,69 @@ def april_new():
     # 163569 words
     allowed_words = [w for w in allowed_words
                      if re.fullmatch("[а-яА-Я]+[а-яА-Я_]+[а-яА-Я]+", w)]
-
-    # morphed = [morph.parse(w)[0] for w in allowed_words]
-    # Sgtm - singularia tantum
-    # bad_tags = {"Name", "plur", "Geox", "Sgtm"}
-    # good_tags = {"NOUN", "nomn", "sing"}
-    # allowed_words = [w for w_i, w in enumerate(allowed_words)
-    #                  if not any(t in morphed[w_i].tag for t in bad_tags) and
-    #                  all(t in morphed[w_i].tag for t in good_tags)]
+    allowed_words = [w for w in allowed_words if len(w) > 3]
+    if zaliznak_filter:
+        with open("zaliznak.txt") as f:
+            zaliznak = f.readlines()
+        zaliznak = [l.strip() for l in zaliznak]
+        allowed_words = [w for w in allowed_words
+                         if w in zaliznak or "_" in w]
+    if morphy_filter or nouns_only:
+        morph = pymorphy2.MorphAnalyzer()
+    if morphy_filter:
+        morphed = [morph.parse(w)[0] for w in allowed_words]
+        # Sgtm - singularia tantum; geox - geographical
+        bad_tags = {"COMP", "Name", "plur", "Geox",
+                    "NPRO",  # местоимение-существительное
+                    "PREP",
+                    "CONJ",
+                    "PRCL",
+                    "INTJ",
+                    # non-nominative cases
+                    "gent", "datv", "accs", "ablt", "loct",
+                    "voct", "gen1", "gen2",
+                    "acc2", "loc1", "loc2",
+                    # names
+                    "Surn", "Patr", "Orgn", "Trad",
+                    # verb grammar
+                    "past", "futr", "impr", "incl", "excl", "pssv"
+                    }
+        allowed_words = [w for w_i, w in enumerate(allowed_words)
+                         if not any(t in morphed[w_i].tag for t in bad_tags)]
+    if nouns_only:
+        allowed_words = [w for w_i, w in enumerate(allowed_words)
+                         if "NOUN" in morph.parse(w)[0].tag]
+    # and
+    # all(t in morphed[w_i].tag for t in good_tags)]
     # allowed_words = [w for w in allowed_words if len(w) < 17 or "_" in w]
     word_matrix = np.array([ru_emb[w] for w in allowed_words])
+    allowed_words = np.array(allowed_words)
     emb_norm = np.linalg.norm(word_matrix, axis=1)[np.newaxis].T
+    parts_of_speech = np.argmax(pos_gbm.predict(word_matrix), axis=1)
 
     ru_synonyms = []
     ru_hypernyms = []
     # irange = [(w0_i, word_0, gbm, word_matrix, allowed_words, emb_norm)
     #           for w0_i, word_0 in enumerate(allowed_words)]
     # pool = mp.pool.ThreadPool(4)
-
     for w0_i, word_0 in enumerate(allowed_words):
         word_hypernyms, word_synonyms = get_ru_relations(
-            w0_i, word_0, gbm, word_matrix, allowed_words, emb_norm)
+            w0_i, word_0, gbm, word_matrix, allowed_words, emb_norm,
+            parts_of_speech, pos_filter=pos_filter)
         ru_hypernyms += word_hypernyms
         ru_synonyms += word_synonyms
-    pickle.dump(ru_synonyms, open("ru_synonyms_2.pcl", "wb"))
-    pickle.dump(ru_hypernyms, open("ru_hypernyms_2.pcl", "wb"))
+    print("allowed words", len(allowed_words))
+    time.sleep(10)
+    for filename, file in [(f"{folder}/synonyms", ru_synonyms),
+                           (f"{folder}/hypernyms", ru_hypernyms)]:
+        with open("{}_{}_{}".format(filename,
+                                    len(allowed_words),
+                                    now),
+                  "a") as f:
+            for line_i, line in enumerate(file):
+                f.write("\t".join([str(w) for w in line]) + "\n")
+    # pickle.dump(ru_synonyms, open("ru_synonyms_zaliznak.pcl", "wb"))
+    # pickle.dump(ru_hypernyms, open("ru_hypernyms_zaliznak.pcl", "wb"))
     # In [27]: ru_wordnet = dict()
     #     ...: for r in ru_hypernyms:
     #     ...:     k, v = r
@@ -852,21 +989,366 @@ def tf_model(x_train, y_train, x_test, y_test):
 def keras_model(x_train, y_train, x_test, y_test):
     es = EarlyStopping(monitor='val_loss', min_delta=0, patience=5,
                        verbose=0, mode='auto')
-    inputs = Input(shape=(601, ))
-    dropout_1 = Dropout(0.1)(inputs)
-    dense_1 = Dense(512, activation='relu')(dropout_1)
-    dropout_2 = Dropout(0.1)(dense_1)
-    dense_2 = Dense(256, activation='relu')(dropout_2)
-    outputs = Dense(3, activation='softmax')(dense_2)
+    inputs = Input(shape=(x_train.shape[1], ))
+
+    dropout_1 = Dropout(0.2)(inputs)
+    dense_1 = Dense(800, activation='relu')(dropout_1)
+
+    dropout_2 = Dropout(0.2)(dense_1)
+    dense_2 = Dense(512, activation='relu')(dropout_2)
+
+    dropout_3 = Dropout(0.1)(dense_2)
+    dense_3 = Dense(256, activation='relu')(dense_2)
+
+    if len(y_train.shape) > 1:
+        categ_nums = y_train.shape[1]
+        activation = 'softmax'
+        loss = 'sparse_categorical_crossentropy'
+    else:
+        categ_nums = 1
+        activation = 'sigmoid'
+        loss = "binary_crossentropy"
+    outputs = Dense(categ_nums, activation=activation)(dense_3)
     model = Model(inputs=inputs, outputs=outputs)
-    model.compile(loss='sparse_categorical_crossentropy', optimizer='adam',
+    model.compile(loss=loss, optimizer='adam',
                   metrics=['accuracy'])
     model.fit(x_train, y_train,
-              batch_size=128, epochs=2000,
+              batch_size=256, epochs=2000,
               validation_data=(x_test, y_test),
               callbacks=[es])
-    model.save("w2v/keras_cnn_lstm.h5")
+    model.save("models/keras_cnn_lstm.h5")
+    return model
+
+
+def parse_hypernyms(filename="hypernyms_41800", khodak=None, vectorizer=None):
+
+    f = open(filename)
+    hypernyms = dict()
+    reverse = dict()
+    for i, line in enumerate(f):
+        if i % 10000 == 0:
+            print("\t", i, end="\r")
+        line = line.strip()
+        line = line.split("\t")
+        score = float(line[-1])
+        if score < 0.9:
+            continue
+        hyper = line[0]
+        hypo = line[1]
+        # if vectorizer:
+        #     vec = vectorizer.transform([f"{hyper} {hypo}"]).todense()
+        #     vec = vec[vec > 0]
+        #     if vec.shape[1] > 1:
+        #         new_score = score * vec.tolist()[0][1]
+        #     else:
+        #         continue
+        #     if new_score < 0.8:
+        #         continue
+        #     else:
+        #         print(hyper, hypo, score, new_score, vec.tolist()[0])
+        if hyper == hypo:
+            continue
+        if khodak:
+            if hyper not in khodak and hypo not in khodak:
+                continue
+        # vectorizer.fit([f"{hypo} {hyper}"])
+            # print(hyper, hypo, score)
+        if hypo not in reverse:
+            reverse[hypo] = {hyper}
+        else:
+            reverse[hypo].add(hyper)
+        if hyper not in hypernyms:
+            # hypo = (hypo, score)  # !!!!!!
+            hypernyms[hyper] = {(hypo, score)}
+        else:
+            hypernyms[hyper].add((hypo, score))
+        # nature - bear
+        # nature - animal
+        # animal - bear
+        # remove bear from nature
+        for k, v in reverse.items():
+            to_delete = list()
+            for v_i, v_l in enumerate(v):
+                if v_l in reverse:
+                    joined = reverse[v_l] & v
+                    if joined:
+                        for hyper_k in joined:
+                            if k in hypernyms[hyper_k]:
+                                hypernyms[hyper_k].pop(k, None)
+                                to_delete.append(hyper_k)
+            reverse[k] = {v for v in reverse[k] if v not in to_delete}
+        # to_delete = set()
+        # for k, v in hypernyms.items():
+        #     upper_hierarchy_words = dict()
+        #     for word in v:
+        #         if word in hypernyms:
+        #             upper_hierarchy_words[word] = hypernyms[word]
+        #             to_delete.add(word)
+        #     hypernyms[k] = [w for w in v if w not in upper_hierarchy_word]
+        #     for w in upper_hierarchy_word:
+        #         print(k, word)
+        #         hypernyms[k] =(hypernyms[w])
+        # hypernyms = {k: v for k, v in hypernyms.items() if k not in to_delete}
+        return hypernyms, reverse
+
+
+def load_model():
+    with open("other_works/pawn/ru_matches.txt") as f:
+        khodak = f.readlines()
+    khodak = [l.strip().split("\t") for l in khodak if ":" in l]
+    khodak = [l[1] for l in khodak if len(l) == 2]
+    khodak = set(khodak)
+    hypernyms, reverse = parse_hypernyms(khodak, vectorizer=None)
+    lines = []
+    for k, v in reverse.items():
+        lines.append("{} {}".format(k, " ".join(v)))
+    for k, v in hypernyms.items():
+        lines.append("{} {}".format(k, " ".join(v)))
+    vectorizer = TfidfVectorizer()
+    vectorizer.fit(lines)
+    hypernyms_v, reverse_v = parse_hypernyms(khodak, vectorizer=vectorizer)
+
+    to_match = [(w, k) for k,v  in reverse.items() for w in v]
+    random.shuffle(to_match)
+    match_df = pd.DataFrame(to_match)
+    annotate(match_df, "wordnet_nouns", 0, limit=200)
+
+
+def create_synset_names_dict(synsets):
+    synset_names = dict()
+    for k, v in synsets.items():
+        name = "".join(k.split(".")[:-2])
+        if name in synset_names:
+            synset_names[name].update(set(v))
+        else:
+            synset_names[name] = set(v)
+    return synset_names
+
+
+def create_synset_dataset(synsets, synset_names, all_lemmas, emb,
+                          add_zeroes=True):
+    X = []
+    Y = []
+    for k, v in synsets.items():
+        name = "".join(k.split(".")[:-2])
+        v = {lemma for lemma in v if lemma in emb and lemma != name}
+        name_lemmas = synset_names[name]
+        name_lemmas = {lemma for lemma in name_lemmas if lemma in emb and
+                       lemma != name}
+        union = name_lemmas & v
+        difference = name_lemmas.difference(v)
+        for lemma in union:
+            X.append([lemma, k])
+            Y.append(1)
+        for lemma in difference:
+            X.append([lemma, k])
+            Y.append(0)
+        left_random = len(union) - len(difference)
+        if add_zeroes:
+            if left_random > 0:
+                for i in range(left_random):
+                    random_lemma = random.choice(all_lemmas)
+                    if random_lemma not in v:
+                        X.append([random_lemma, k])
+                        Y.append(0)
+    return X, Y
+
+
+def create_all_lemmas(synsets, emb):
+    all_lemmas = list(set([w for v in synsets.values() for w in v]))
+    all_lemmas = [l for l in all_lemmas if l in emb]
+    return all_lemmas
+
+
+def april_khodak():
+    eng_emb = load_embeddings("en")
+    ru_emb = load_embeddings("ru")
+
+    USE_FOREIGN = True
+    ADD_ZEROES = True
+    TFIDF = True
+
+    stops = set(stopwords.words('english'))
+    # get synsets + their lemmas
+    # 117659 synsets
+    synsets = {w.name(): [l.name().lower().replace(".", "")
+                          for l in w.lemmas()]
+               for w in wordnet.all_synsets()}
+    synsets = {k: v for k, v in synsets.items() if v}
+    # synsets = {k: [w for w in v if w in eng_emb] for k, v in synsets.items()}
+    # 69094 synsets
+    synsets = {k: set(v) for k, v in synsets.items() if v}
+
+    synset_list = list(synsets.keys())
+    synset_index = {w: i for i, w in enumerate(synset_list)}
+
+    with open(f'synsets/synset_index.json', 'w') as outfile:
+        json.dump(synset_index, outfile)
+
+    synset_matrix = np.zeros(shape=(len(synset_index), eng_emb.vector_size))
+
+    # no_embedding_synsets = set()
+    definitions = dict()
+    for s in synsets:
+        definition = wordnet.synset(s).definition()
+        definition = text_pipeline(definition, lemmatize=False)
+        definition = [w for w in definition if w not in stops and w in eng_emb]
+        # if not definition:
+        #     print(wordnet.synset(s).definition())
+        definitions[s] = definition
+    vocabulary = {w for d in definitions.values() for w in d}
+    vocabulary = {v: v_i for v_i, v in enumerate(vocabulary)}
+    vectorizer = TfidfVectorizer(
+        tokenizer=lambda x: x,
+        lowercase=False,
+        vocabulary=vocabulary.keys())
+    vectorizer = vectorizer.fit(definitions.values())
+
+    for s_i, s in enumerate(synset_list):
+        print("\t", s_i, s, len(synset_list), end="\r")
+        lemmas = synsets[s]
+        weights = (0.1, 0.9)
+        # averaged; e.g. pass_away <- np.mean(eng_emb[["pass", "away"]])
+        # secondary_lemmas = False
+        no_lemmas = False
+        emb_lemmas = [l for l in lemmas if l in eng_emb]
+        if not emb_lemmas:
+            lemmas = [l.split("_") for l in lemmas if "_" in l]
+            lemmas = [l for l in lemmas if
+                      all(w in eng_emb for w in l)]
+            if lemmas:
+                # gensim KeyedVectors also accept lists of words
+                embeddings = [np.mean(eng_emb[l], axis=0) for l in lemmas]
+                embeddings = np.mean(embeddings, axis=0)
+                weights = (0.1, 0.9)
+            else:
+                no_lemmas = True
+        else:
+            lemmas = emb_lemmas
+            # gensim KeyedVectors also accept lists of words
+            embeddings = eng_emb[lemmas]
+            embeddings = np.average(embeddings, axis=0)
+        definition = definitions[s]
+        if definition:
+            def_weights = None
+            if TFIDF:
+                def_weights = vectorizer.transform([definition]).toarray()[0]
+                def_weights = [def_weights[vocabulary[w]] for w in definition]
+
+            definition_emb = np.average(eng_emb[definition], axis=0,
+                                        weights=def_weights)
+            if not no_lemmas:
+                embeddings = np.average([embeddings, definition_emb],
+                                        weights=weights, axis=0)
+            else:
+                embeddings = definition_emb
+        # I havent checked the case when there are no lemmas and no definition
+        # but there isnt such a case
+        synset_matrix[s_i] = embeddings
+    # prepare dataset
+    synset_names = create_synset_names_dict(synsets)
+
+    all_lemmas = create_all_lemmas(synsets, eng_emb)
+    X, Y = create_synset_dataset(synsets, synset_names, all_lemmas, eng_emb,
+                                 add_zeroes=ADD_ZEROES)
+    X_vec = [np.concatenate([eng_emb[row[0]],
+                             synset_matrix[synset_index[row[1]]]])
+             for row in X]
+    lang_embeddings = {"fi": "fin",
+                       # "pl": "pol",
+                       }
+    if USE_FOREIGN:
+        for emb_lng, wn_lng in lang_embeddings.items():
+            lang_emb = load_embeddings(emb_lng)
+            lang_synsets = {s: wordnet.synset(s).lemma_names(wn_lng)
+                            for s in synsets
+                            if wordnet.synset(s).lemma_names(wn_lng)}
+            lang_name_synsets = create_synset_names_dict(lang_synsets)
+            lang_lemmas = create_all_lemmas(lang_synsets, lang_emb)
+
+            lang_X, lang_Y = create_synset_dataset(
+                lang_synsets, lang_name_synsets, lang_lemmas, lang_emb,
+                add_zeroes=ADD_ZEROES)
+            for lemma, s in lang_X:
+                X_vec.append(np.concatenate(
+                    [lang_emb[lemma],
+                     synset_matrix[synset_index[s]]]))
+            Y += lang_Y
+
+    X_vec = np.array(X_vec)
+    X = X_vec
+    Y = np.array(Y)
+    x_train, x_test, y_train, y_test = train_test_split(
+        X, Y, test_size=0.2, random_state=42)
+    gbm = train_gbm(x_train, x_test, y_train, y_test, f"synsets/main2")
+    nn_model = keras_model(x_train, y_train, x_test, y_test)
+    with open("other_works/pawn/ru_matches.txt") as f:
+        khodak = f.readlines()
+    khodak = [l.strip().split("\t") for l in khodak]
+
+    # convert data to
+    # ад  chaos.n.01          1
+    # ад  conflagration.n.01  0
+    # ад  gehenna.n.01        1
+    # ад  hell.n.01           1
+    # ад  hell.n.04           0
+    khodak_data = []
+    ru_word = ""
+    pos = ""
+    for l in khodak:
+        if len(l) == 2 and ":" in l[0]:
+            ru_word = l[1]
+        elif len(l) == 2 and l[0] == "#":
+            pos = l[1]
+        elif len(l) == 3:
+            synset = l[1]
+            target = l[0]
+            if synset in synsets:
+                khodak_data.append([ru_word, synset, target, pos])
+    # not_found = len([l for l in khodak_data if l[0] not in ru_emb])
+    khodak_data = [l for l in khodak_data if l[0] in ru_emb]
+    khodak_df = pd.DataFrame(
+        khodak_data, columns=["ru", "synset", "target", "pos"])
+    khodak_df["target"] = khodak_df["target"].astype(int)
+
+    f1_scores = []
+    pos_s = ["", "n", "a", "v"]
+    for pos in pos_s:
+        if pos == "":
+            pred_df = khodak_df
+        else:
+            pred_df = khodak_df[khodak_df["pos"] == pos]
+
+        ru_input = ru_emb[pred_df["ru"].values]
+        # embeddings for all ru words
+        eng_input = [synset_index[s] for s in pred_df["synset"].values]
+        # embeddings for all eng words
+        eng_input = synset_matrix[eng_input]
+        input_data = np.concatenate([ru_input, eng_input], axis=1)
+        gbm_preds = gbm.predict(input_data)
+        # preds = np.argmax(preds, axis=1).astype(bool)  # &\
+        # np.max(preds, axis=1) > 0.6
+        # preds = preds.astype(int)
+        # print(pos, "gbm", f1_score(pred_df["target"].values, preds))
+        nn_preds = nn_model.predict(input_data).T[0]
+        avg_preds = np.mean([gbm_preds, nn_preds], axis=0)
+        models = ["gbm", "nn", "avg"]
+        for threshold in (0.2, 0.3, 0.4, 0.5):
+            for model_i, preds in enumerate([gbm_preds, nn_preds, avg_preds]):
+                model = models[model_i]
+                threshold_preds = preds > threshold
+                threshold_preds = threshold_preds.astype(int)
+                f1 = f1_score(pred_df["target"].values, threshold_preds)
+                f1_scores.append([f1, pos, model, threshold])
+                # print(f1, pos, model, threshold)
+    f1_df = pd.DataFrame(f1_scores,
+                         columns=["f1", "pos", "model", "threshold"])
+    for pos in pos_s:
+        print(f1_df[f1_df.pos == pos].groupby(
+            ["pos", "model", "threshold"]).max())
+    pred_df["preds"] = preds
 
 
 if __name__ == "__main__":
-    main()
+    # main()
+    april_new()
