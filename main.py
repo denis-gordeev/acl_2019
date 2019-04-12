@@ -5,7 +5,7 @@ import pickle
 import json
 import re
 import time
-import multiprocessing as mp
+# import multiprocessing as mp
 import numpy as np
 from scipy import spatial
 import pandas as pd
@@ -36,7 +36,8 @@ from utils import read_nigp_csv_pd, get_averaged_vectors, read_okpd_pd,\
     matrices_cosine_distance, get_top_indices
 from utils_d.utils import text_pipeline
 from utils_d.ml_models import CnnLstm, train_lgb
-from utils_d.ml_utils import create_word_index
+from utils_d.ml_utils import Ensemble, predict_binary
+# from utils_d.ml_utils import create_word_index
 
 
 def add_graph_vec_to_df(graph_df):
@@ -578,8 +579,10 @@ def create_syn_combinations(input_iter):
     return combinations
 
 
-def train_gbm(x_train, x_test, y_train, y_test, name):
+def train_gbm(x_train, x_test, y_train, y_test, name, k_fold=False):
     objective = 'multiclass'
+    thresholds, weights = None, None
+    # check whether target is binary
     if len(y_train.shape) > 1:
         categ_nums = np.unique(y_train).shape[0]
     else:
@@ -596,9 +599,13 @@ def train_gbm(x_train, x_test, y_train, y_test, name):
         'num_class': categ_nums,
         'early_stopping_rounds': 10,
         'verbose': 0}
-    gbm, score = train_lgb(
-        x_train, x_test, y_train, y_test, k_fold=False, params=gbm_params)
-    gbm = gbm[0]
+    gbm, score, weights = train_lgb(
+        x_train, x_test, y_train, y_test, k_fold=True, params=gbm_params,
+        n_splits=2, n_repeats=2)
+    if not k_fold:
+        gbm = gbm[0]
+    else:
+        gbm = Ensemble(gbm)
     pickle.dump(gbm, open(f"{name}gbm_{score}.pcl", "wb"))
     preds = gbm.predict(x_test)
     if categ_nums:
@@ -620,7 +627,7 @@ def train_gbm(x_train, x_test, y_train, y_test, name):
             mask_preds = mask_preds.astype(int)
             print("acc", accuracy_score(y_test, mask_preds))
             print("f1", f1_score(y_test, mask_preds))
-    return gbm
+    return gbm, thresholds, weights
 
 
 def train_cnn(
@@ -1280,8 +1287,13 @@ def april_khodak():
     Y = np.array(Y)
     x_train, x_test, y_train, y_test = train_test_split(
         X, Y, test_size=0.2, random_state=42)
-    gbm = train_gbm(x_train, x_test, y_train, y_test, f"synsets/main2")
+    ensemble = train_gbm(x_train, x_test, y_train, y_test, f"synsets/main2")
+    ensemble_threshold = [f1_score(y_test,
+                          predict_binary(ensemble, x_test, threshold=t / 10))
+                          for t in range(1, 10)]
+    ensemble_threshold = round((1 + np.argmax(ensemble_threshold)) * 0.1, 2)
     nn_model = keras_model(x_train, y_train, x_test, y_test)
+    ensemble.models.append(nn_model)
     with open("other_works/pawn/ru_matches.txt") as f:
         khodak = f.readlines()
     khodak = [l.strip().split("\t") for l in khodak]
@@ -1333,6 +1345,8 @@ def april_khodak():
         nn_preds = nn_model.predict(input_data).T[0]
         avg_preds = np.mean([gbm_preds, nn_preds], axis=0)
         models = ["gbm", "nn", "avg"]
+        if ensemble_threshold:
+            
         for threshold in (0.2, 0.3, 0.4, 0.5):
             for model_i, preds in enumerate([gbm_preds, nn_preds, avg_preds]):
                 model = models[model_i]
