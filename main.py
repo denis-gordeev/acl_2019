@@ -27,6 +27,7 @@ import pymorphy2
 from scipy.optimize import linear_sum_assignment
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, f1_score
+from sklearn.model_selection import KFold
 from sklearn.metrics import confusion_matrix
 
 import networkx as nx
@@ -38,6 +39,16 @@ from utils_d.utils import text_pipeline
 from utils_d.ml_models import CnnLstm, train_lgb
 from utils_d.ml_utils import Ensemble, predict_binary
 # from utils_d.ml_utils import create_word_index
+
+
+def get_now():
+    """
+    convert datetime to string
+    """
+    now = datetime.now().isoformat()
+    now = now.split(".")[0]
+    now = now.replace(":", "_")
+    return now
 
 
 def add_graph_vec_to_df(graph_df):
@@ -600,7 +611,7 @@ def train_gbm(x_train, x_test, y_train, y_test, name, k_fold=False):
         'early_stopping_rounds': 10,
         'verbose': 0}
     gbm, score, weights = train_lgb(
-        x_train, x_test, y_train, y_test, k_fold=True, params=gbm_params,
+        x_train, x_test, y_train, y_test, k_fold=k_fold, params=gbm_params,
         n_splits=2, n_repeats=2)
     if not k_fold:
         gbm = gbm[0]
@@ -1132,23 +1143,43 @@ def create_synset_names_dict(synsets):
     return synset_names
 
 
-def create_synset_dataset(synsets, synset_names, all_lemmas, emb,
+def get_synset_pos(synset):
+    pos = synset.split(".")[-2]
+    if pos == "v":
+        pos = [0, 0, 1]
+    elif pos == "n":
+        pos = [0, 1, 0]
+    else:
+        pos = [1, 0, 0]
+    return pos
+
+
+def create_synset_dataset(synsets, syn_names, all_lemmas, emb, syn_mtx,
+                          syn_ind,
                           add_zeroes=True):
     X = []
     Y = []
+
     for k, v in synsets.items():
         name = "".join(k.split(".")[:-2])
+        pos = get_synset_pos(k)
+        meaning = k.split(".")[-1]
+        meaning = int(meaning) / 60
         v = {lemma for lemma in v if lemma in emb and lemma != name}
-        name_lemmas = synset_names[name]
+        name_lemmas = syn_names[name]
         name_lemmas = {lemma for lemma in name_lemmas if lemma in emb and
                        lemma != name}
         union = name_lemmas & v
         difference = name_lemmas.difference(v)
+        add_vec = [meaning] + pos
+        k_vec = syn_mtx[syn_ind[k]]
         for lemma in union:
-            X.append([lemma, k])
+            lemma_vec = emb[lemma]
+            X.append(np.concatenate([lemma_vec, k_vec, add_vec]))
             Y.append(1)
         for lemma in difference:
-            X.append([lemma, k])
+            lemma_vec = emb[lemma]
+            X.append(np.concatenate([lemma_vec, k_vec, add_vec]))
             Y.append(0)
         left_random = len(union) - len(difference)
         if add_zeroes:
@@ -1156,7 +1187,8 @@ def create_synset_dataset(synsets, synset_names, all_lemmas, emb,
                 for i in range(left_random):
                     random_lemma = random.choice(all_lemmas)
                     if random_lemma not in v:
-                        X.append([random_lemma, k])
+                        r_lem_vec = emb[random_lemma]
+                        X.append(np.concatenate([r_lem_vec, k_vec, add_vec]))
                         Y.append(0)
     return X, Y
 
@@ -1167,12 +1199,25 @@ def create_all_lemmas(synsets, emb):
     return all_lemmas
 
 
+def k_fold_training(X_, Y_, tr_function, num_folds=5):
+    folds = KFold(n_splits=num_folds, random_state=2319)
+    models = []
+    for fold_, (train_index, test_index) in enumerate(
+            folds.split(X_, Y_)):
+        X_train_fold, X_valid = X_[train_index], X_[test_index]
+        Y_train_fold, Y_valid = Y_[train_index], Y_[test_index]
+        model = tr_function(X_train_fold, Y_train_fold, X_valid, Y_valid)
+        models.append(model)
+    return models
+
+
 def april_khodak():
     eng_emb = load_embeddings("en")
     ru_emb = load_embeddings("ru")
 
     USE_FOREIGN = True
     ADD_ZEROES = True
+    USE_KFOLD = True
     TFIDF = True
 
     stops = set(stopwords.words('english'))
@@ -1251,16 +1296,16 @@ def april_khodak():
                 embeddings = definition_emb
         # I havent checked the case when there are no lemmas and no definition
         # but there isnt such a case
+
         synset_matrix[s_i] = embeddings
     # prepare dataset
     synset_names = create_synset_names_dict(synsets)
 
     all_lemmas = create_all_lemmas(synsets, eng_emb)
-    X, Y = create_synset_dataset(synsets, synset_names, all_lemmas, eng_emb,
-                                 add_zeroes=ADD_ZEROES)
-    X_vec = [np.concatenate([eng_emb[row[0]],
-                             synset_matrix[synset_index[row[1]]]])
-             for row in X]
+    X, Y = create_synset_dataset(
+        synsets, synset_names, all_lemmas, eng_emb, synset_matrix,
+        synset_index, add_zeroes=ADD_ZEROES)
+
     lang_embeddings = {"fi": "fin",
                        # "pl": "pol",
                        }
@@ -1275,25 +1320,44 @@ def april_khodak():
 
             lang_X, lang_Y = create_synset_dataset(
                 lang_synsets, lang_name_synsets, lang_lemmas, lang_emb,
+                synset_matrix, synset_index,
                 add_zeroes=ADD_ZEROES)
-            for lemma, s in lang_X:
-                X_vec.append(np.concatenate(
-                    [lang_emb[lemma],
-                     synset_matrix[synset_index[s]]]))
+            X += lang_X
             Y += lang_Y
 
-    X_vec = np.array(X_vec)
-    X = X_vec
+    X = np.array(X)
     Y = np.array(Y)
     x_train, x_test, y_train, y_test = train_test_split(
         X, Y, test_size=0.2, random_state=42)
-    ensemble = train_gbm(x_train, x_test, y_train, y_test, f"synsets/main2")
-    ensemble_threshold = [f1_score(y_test,
-                          predict_binary(ensemble, x_test, threshold=t / 10))
-                          for t in range(1, 10)]
-    ensemble_threshold = round((1 + np.argmax(ensemble_threshold)) * 0.1, 2)
-    nn_model = keras_model(x_train, y_train, x_test, y_test)
-    ensemble.models.append(nn_model)
+    if USE_KFOLD:
+        ensemble = train_gbm(x_train, x_test,
+                             y_train, y_test, f"synsets/main2",
+                             k_fold=USE_KFOLD)
+        nn_models = k_fold_training(x_train, y_train, keras_model, num_folds=4)
+        ensemble.models += nn_models
+    else:
+        gbm = train_gbm(x_train, x_test,
+                        y_train, y_test, f"synsets/main2",
+                        k_fold=USE_KFOLD)
+        gbm = gbm[0]
+        nn_model = keras_model(x_train, y_train, x_test, y_test)
+    if USE_KFOLD:
+        # threshold between [0.1, 0.9]
+        ensemble_threshold = [f1_score(y_test,
+                                       predict_binary(ensemble,
+                                                      x_test,
+                                                      threshold=t / 10))
+                              for t in range(1, 10)]
+        ensemble_threshold = np.argmax(ensemble_threshold)
+        adjust_min = ensemble_threshold * 10
+        ensemble_adjust = [f1_score(y_test,
+                                    predict_binary(ensemble,
+                                                   x_test,
+                                                   threshold=t / 100))
+                           for t in range(adjust_min, adjust_min + 20)]
+        ensemble_adjust = np.argmax(ensemble_adjust)
+        ensemble_threshold = round(
+            ensemble_threshold * 0.1 + ensemble_adjust * 0.01, 3)
     with open("other_works/pawn/ru_matches.txt") as f:
         khodak = f.readlines()
     khodak = [l.strip().split("\t") for l in khodak]
@@ -1336,30 +1400,48 @@ def april_khodak():
         eng_input = [synset_index[s] for s in pred_df["synset"].values]
         # embeddings for all eng words
         eng_input = synset_matrix[eng_input]
-        input_data = np.concatenate([ru_input, eng_input], axis=1)
-        gbm_preds = gbm.predict(input_data)
+
+        syn_pos = [get_synset_pos(s) for s in pred_df["synset"].values]
+
+        meaning = [[int(s.split(".")[-1]) / 60]
+                   for s in pred_df["synset"].values]
+
+        input_data = np.concatenate([ru_input, eng_input, meaning, syn_pos],
+                                    axis=1)
+
         # preds = np.argmax(preds, axis=1).astype(bool)  # &\
         # np.max(preds, axis=1) > 0.6
         # preds = preds.astype(int)
         # print(pos, "gbm", f1_score(pred_df["target"].values, preds))
-        nn_preds = nn_model.predict(input_data).T[0]
-        avg_preds = np.mean([gbm_preds, nn_preds], axis=0)
-        models = ["gbm", "nn", "avg"]
-        if ensemble_threshold:
-            
-        for threshold in (0.2, 0.3, 0.4, 0.5):
-            for model_i, preds in enumerate([gbm_preds, nn_preds, avg_preds]):
-                model = models[model_i]
-                threshold_preds = preds > threshold
-                threshold_preds = threshold_preds.astype(int)
-                f1 = f1_score(pred_df["target"].values, threshold_preds)
-                f1_scores.append([f1, pos, model, threshold])
-                # print(f1, pos, model, threshold)
+        if USE_KFOLD:
+            preds = predict_binary(
+                ensemble, input_data, threshold=ensemble_threshold)
+            f1 = f1_score(pred_df["target"].values, preds)
+            f1_scores.append([f1, pos, "avg", ensemble_threshold])
+        else:
+
+            gbm_preds = gbm.predict(input_data)
+            nn_preds = nn_model.predict(input_data).T[0]
+            avg_preds = np.mean([gbm_preds, nn_preds], axis=0)
+            models = ["gbm", "nn", "avg"]
+            for threshold in (0.2, 0.3, 0.4, 0.5):
+                for model_i, preds in enumerate(
+                        [gbm_preds, nn_preds, avg_preds]):
+                    model = models[model_i]
+                    threshold_preds = preds > threshold
+                    threshold_preds = threshold_preds.astype(int)
+                    f1 = f1_score(pred_df["target"].values, threshold_preds)
+                    f1_scores.append([f1, pos, model, threshold])
+                    # print(f1, pos, model, threshold)
     f1_df = pd.DataFrame(f1_scores,
                          columns=["f1", "pos", "model", "threshold"])
-    for pos in pos_s:
-        print(f1_df[f1_df.pos == pos].groupby(
-            ["pos", "model", "threshold"]).max())
+
+    if not USE_KFOLD:
+        group_cols = ["pos", "model", "threshold"]
+        for pos in pos_s:
+            print(f1_df[f1_df.pos == pos].groupby(group_cols).max())
+    else:
+        print(f1_df[["pos", "f1"]])
     pred_df["preds"] = preds
 
 
