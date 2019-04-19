@@ -181,6 +181,7 @@ We also attempted to fine tune input data using PCA and UMAP <cite> but it did n
 
 \section{Multiword Expressions}
 Mikolov bigrams
+$$score(w_i, w_j) = \frac{count(w_iw_j) - \delta}{count(w_i) * count(w_j)}$$
 \section{WordNet construction}
 WordNet construction imposes significant computational problems because for every word from the vocabulary we need to compare it with every possible synset. For this reason we used several heuristics. 1) removed strings with punctuation besides the underscore symbol. 2) identified language using <cite> for each string.
 Vectorized all computations
@@ -264,5 +265,5 @@ Some works propose to change the embeddings training process to incorporate hier
 Word embeddings methods are preferable for short texts~\cite{maslova-potapov}.
 
 \bibliographystyle{acl_natbib}
-\bibliography{muse-wordnet}
+\bibliography{new}
 \end{document}
