@@ -631,7 +631,7 @@ def create_wordnets():
                 continue
             synsets = [reverse_index[s] for s in synsets]
             for s in synsets:
-                f_lang.write(f"{v}\t{s}\n")
+                f_lang.write("{}\t{}\n".format(v, s))
         os.remove(filename)
         f_lang.close()
 
