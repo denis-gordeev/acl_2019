@@ -161,19 +161,22 @@ We reformulated the problem of synset finding as a binary classification problem
 	
 \end{table}
 
-Synset embeddings were calculated using averaged synset lemma embedding and the definition embedding. We used averaging weights 0.2 for the lemma and 0.8 for the definition. SIF and TFIDF-averaging schemes were used for definition embeddings. SIF \cite{Arora2017} embeddings use pre-trained word vectors. For each sentence $s$ this model first creates a vectorized averaged representation $V_s$.
+Synset embeddings were calculated using averaged synset lemma embedding and the definition embedding. We used averaging weights 0.2 for the lemma and 0.8 for the definition. SIF (smooth inverse frequency) and TF-IDF (term frequency–inverse document frequency) averaging schemes were used for definition embeddings. SIF \cite{Arora2017} embeddings use pre-trained word vectors. For each sentence $s$ this model first creates a vectorized averaged representation $V_s$.
 
 $$V_s = \dfrac{1}{|s|}\sum_{w \in s} \frac{a}{a + p(w)}V_w$$
 where $V_w$ is the word unigram probability and $a$ is a scalar (set to 1e-3 by default).
 After that all sentence embeddings are grouped into a matrix where $u$ is its first singular vector. The final sentence embedding is computed using this singular vector $u$.
 $$V_s = V_s - uu^TV_s$$
 
+
 For each lemma we used its embedding from the corresponding cross-lingual pre-trained model (\cite{muse} or \cite{joulin2018loss}) for the language.
+
+Each synset vector is also augmented with information about its part-of-speech and the synset number.
 
 Predicting synset relations is not a trivial task even in a monolingual setting. E.g. we failed to get any meaningful cluster representation for synsets using TSNE \cite{tsne} (Fig. \ref{wordnet-pos}). Moreover, there is not much training data and models are prone to overfitting. Thus, we introduced an ensemble of 4 LGBM-models \cite{lgbm} and 4 dense 3-layered fully-connected neural networks with dropout as regularization \cite{dropout}.
 In our case fine-tuning parameters using half of data not only did not bring any benefit to the final score but even decreased it significantly.
 
-We also attempted to fine tune input data using PCA and UMAP embeddings but it did not provide any benefit and actually decreased results.
+We also attempted to fine tune input data using PCA and UMAP <cite> but it did not provide any benefit and even decreased results.
 
 
 \section{Multiword Expressions}
@@ -185,8 +188,8 @@ Preselected words using a simple model with a low threshold (0.2).
 \section{Results}
 
 As can be seen from table \ref{wordnet-results}
-
-	\begin{table*}[!htbp]
+Using information from another language which is not related to any test languages is helpful. SIF provides a boost of ~3.5 F1-score points compared to simple TF-IDF averaging.
+\begin{table*}[!htb]
 	\small
 	\caption{Results for WordNet-synset prediction}
 	\label{wordnet-results}		

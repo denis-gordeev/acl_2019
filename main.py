@@ -623,7 +623,7 @@ def create_wordnets():
             synset_mtx[:, :300] = emb_v
             preds = predict_binary(ensemble,
                                    synset_mtx,
-                                   threshold=0.7)
+                                   threshold=0.51)
             synsets = np.where(preds == 1)[0]
             # preds = nn_model.predict(synset_mtx).T[0]
             # synsets = np.where(preds > 0.95)[0]
@@ -631,7 +631,7 @@ def create_wordnets():
                 continue
             synsets = [reverse_index[s] for s in synsets]
             for s in synsets:
-                f_lang.write("v\ts\n")
+                f_lang.write(f"{v}\t{s}\n")
         os.remove(filename)
         f_lang.close()
 
