@@ -588,6 +588,8 @@ def create_wordnets():
     lang_model = fastText.load_model("muse_embeddings/lid.176.bin")
     for lang in langs:
         print(f"---{lang}---")
+        if os.path.exists(f"wordnets_constructed/coloc_{lang}"):
+            continue
         f_lang = open(f"wordnets_constructed/coloc_{lang}", "a")
         url = "https://dl.fbaipublicfiles.com/fasttext/"\
               f"vectors-aligned/wiki.{lang}.align.vec"
@@ -632,7 +634,7 @@ def create_wordnets():
             synsets = [reverse_index[s] for s in synsets]
             for s in synsets:
                 f_lang.write("{}\t{}\n".format(v, s))
-        os.remove(filename)
+        os.remove(new_filename)
         f_lang.close()
 
 

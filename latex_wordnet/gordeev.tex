@@ -73,7 +73,7 @@
 \begin{document}
 \maketitle
 \begin{abstract}
-Low-resource languages often lack structured text representations (taxonomies, ontologies and lexical databases). In this paper we propose a method for constructing WordNets without translation data or parallel corpora. The proposed method outperforms translation-based techniques in F1-score. We also publish automatedly constructed truncated WordNets for 44 languages (including non-European ones).
+Low-resource languages often lack structured text representations (taxonomies, ontologies and lexical databases). In this paper we propose a method for constructing WordNets without translation data or parallel corpora. The proposed method outperforms translation-based techniques in F1-score. We also publish automatedly constructed general truncated WordNets and collocation WordNets for 44 languages (including non-European ones).
 \end{abstract}
 
 \section{Introduction}
@@ -180,16 +180,26 @@ We also attempted to fine tune input data using PCA and UMAP <cite> but it did n
 
 
 \section{Multiword Expressions}
-Mikolov bigrams
+A typical phrasing scheme used by Mikolov in Word2Vec <cite> is a very simple	and rather efficient way to take phrase context into consideration and not just consider it as an average of constituents <cite>:
 $$score(w_i, w_j) = \frac{count(w_iw_j) - \delta}{count(w_i) * count(w_j)}$$
+<Examples of collocation wordnets>
 \section{WordNet construction}
-WordNet construction imposes significant computational problems because for every word from the vocabulary we need to compare it with every possible synset. For this reason we used several heuristics. 1) removed strings with punctuation besides the underscore symbol. 2) identified language using <cite> for each string.
-Vectorized all computations
-Preselected words using a simple model with a low threshold (0.2).
+WordNet construction imposes significant computational problems because for every word from the vocabulary we need to compare it with every possible synset. For this reason we used several heuristics. 1) removed strings with punctuation besides the underscore symbol. 2) identified language using <cite> for each string. All computations were vectorized. Ensemble methods also are easy to parallelize using multi-processing in Python <cite?> and using bufferized numpy-arrays <cite or footnote> allows to increase the batch size and avoid copying data.
+
+Preselected words using a simple model with a low threshold (0.2). However, we still had to limit the size of our WordNets. That is why we publish automated WordNets for all collocations and most common 10000 lemmas for 44 languages. To increase the quality of the generated models it was decided to sacrifice recall for the sake of precision and we increased the model confidence threshold.
 \section{Results}
 
-As can be seen from table \ref{wordnet-results}
-Using information from another language which is not related to any test languages is helpful. SIF provides a boost of ~3.5 F1-score points compared to simple TF-IDF averaging.
+As can be seen from table \ref{wordnet-results} cross-lingual embedding methods outperform translation methods in most categories except Russian nouns without being fine-tuned on the test (as the work by Khodak). In some categories the <relative> increase is <>\%. Moreover, cross-lingual methods are reported to work in a completely unsupervised way. Even in the unsupervised mode they are easier to come by because they require only a limited bilingual dictionary <N>. High-quality translation engines are still scanty for low-resource languages (and some of them may also rely on cross-lingual embeddings <cite>).
+
+Using information from another language which is not related to any test languages is 
+helpful. SIF provides a boost of ~3.5 F1-score points compared to simple TF-IDF averaging.
+
+helps to gain 4 points in total F1-score.
+gives a substantial increase in
+
+MUSE-embeddings
+
+Foreign language data. Our experiments with MUSE-embeddings (without <***> embeddings) with data from other languages from the Extended Open Multilingual Wordnet with smaller WordNets (e.g. Polish) decreased the results by <**> points on average.
 \begin{table*}[!htb]
 	\small
 	\caption{Results for WordNet-synset prediction}
@@ -254,11 +264,11 @@ Using information from another language which is not related to any test languag
 	
 \end{table*}
 \section{Conclusion}
-
+Cross-lingual embeddings turned out to be an efficient method for cross-lingual WordNet extension. This technique is not only limited to WordNet construction. It can also be used for other types of similar structures (e.g. taxonomies and ontologies). We also published truncated and collocation WordNets for 44 languages.
 \section{Phraser}
 Moreover, what we find amusing is that English validation set results are similar to the results for the test set in another language.
 
-Many researchers have used a similar method for detecting new hypernyms-hyponyms relations beyond WordNet for English. The work by \cite{sanchez2017well} has provided an overview of such methods. After getting rid of noisy hypernym-hyponym samples models may achieve models may achieve up to 0.812 \% in  accuracy score.
+Many researchers have used a similar method for detecting new hypernyms-hyponyms relations beyond WordNet for English. The work by \cite{sanchez2017well} has provided an overview of such methods. After getting rid of noisy hypernym-hyponym samples models may achieve models may achieve up to 81.2 \% in  accuracy score.
 
 Some works propose to change the embeddings training process to incorporate hierarchical information \cite{alsuhaibani}.
 
