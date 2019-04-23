@@ -188,8 +188,18 @@ For each lemma we used its embedding from the corresponding cross-lingual pre-tr
 
 Each synset vector is also augmented with information about its part-of-speech and the synset number.
 
-Predicting synset relations is not a trivial task even in a monolingual setting. E.g. we failed to get any meaningful cluster representation for synsets using TSNE \cite{tsne} (Fig. \ref{wordnet-pos}). Moreover, there is not much training data and models are prone to overfitting. Thus, we introduced an ensemble of 4 LGBM-models \cite{lgbm} and 4 dense 3-layered fully-connected neural networks with dropout as regularization \cite{dropout}.
-In our case fine-tuning parameters using half of data not only did not bring any benefit to the final score but even decreased it significantly (about 3 F1-score points).
+Predicting synset relations is not a trivial task even in a monolingual setting. E.g. we failed to get any meaningful cluster representation for synsets using TSNE \cite{tsne} (Fig. \ref{wordnet-pos}). Moreover, there is not much training data and models are prone to overfitting. Thus, we introduced an ensemble of 4 LGBM-models \cite{lgbm} and 4 dense 3-layered fully-connected neural networks with dropout as regularization \cite{dropout} .
+
+\begin{figure}[!htbp]
+	
+	\centering
+	\small
+	\includegraphics[scale=0.3]{keras_model}\\
+	
+	\caption{Keras model}
+	\label{keras_model}
+\end{figure}
+In our case fine-tuning parameters using half of test data for validation (and removing it from the final test dataset) not only did not bring any benefit to the final score but even decreased it significantly (about 3 F1-score points).
 
 We also attempted to fine tune input data using PCA (principal component analysis) and UMAP (Uniform Manifold Approximation and Projection) \cite{umap} but it did not provide any gains, and brought about worse results.
 
