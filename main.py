@@ -615,7 +615,7 @@ def create_wordnets():
         # 1037102
         allowed_vocab = [w for w in allowed_vocab if len(w) >= 3]
         print(len(allowed_vocab))
-        # allowed_vocab = [w for w in allowed_vocab if "_" in w]
+        collocations = [w for w in allowed_vocab if "_" in w]
 
         for v_i, v in enumerate(allowed_vocab):
             print(f"{v_i:<5} {v:<20}", end="\r")
