@@ -85,18 +85,18 @@ Low-resource languages often lack structured text representations (taxonomies, o
 %упомянуть другие ворднеты
 %и про ходака
 
-There are numerous structured information representations containing texts as titles, descriptions or definitions: e.g.\ ontologies, taxonomies, and lexical databases. Among such databases we can highlight WordNet\cite{wordnet}. WordNet is a lexical database covering various types of relations between words: both semantical and lexical. Semantic concepts called synsets are connected in accordance to the semantic and lexical relations between them. It has found a very broad usage for many natural language processing and machine learning tasks \cite{kutuzovgraphwordnet,mao-semeval}.
+There are numerous structured information representations containing texts as titles, descriptions or definitions: e.g.\ ontologies, taxonomies, and lexical databases. Among such databases we can highlight WordNet\cite{wordnet}. WordNet is a lexical database covering various types of relations between words: both semantical and lexical. Semantic concepts called synsets are connected in accordance to the semantic and lexical relations between them. The database has found a very broad usage for many natural language processing and machine learning applications \cite{kutuzovgraphwordnet,mao-semeval}.
 There have been many attempts by researchers to automatically convert WordNet from English into other languages. Most attempts were focused on using machine translation engines, extensive bilingual dictionaries or parallel corpora~\cite{Khodak2017,NEALE18.1030} which are often lacking for low-resource languages.
 
 In this paper we propose a method for constructing WordNets using cross-lingual embeddings. Unlike previous attempts our method does not require translation engines or parallel corpora. There have been already works using word embeddings for extending existing WordNets \cite{sand2017wordnet,tarouti} in monolingual settings. However, these methods could not be used for creating a WordNet for another language from scratch.
 
 Word embeddings proved to be a powerful tool for dense text representations after papers by Bengio~\cite{bengio} and Mikolov~\cite{mikolov-representations-2013}. However, first word vector representation models were monolingual only. Soon researchers proposed cross-lingual word embedding models~\cite{mikolov-parallel}. There followed several improvements to the original model. In \citeyear{artetxe2016learning} Arxetxe et al. found that Procrustes refinement gets better results than the original linear transformation method by Mikolov. Also most earlier methods suffered from the "hubness problem" where some words (especially low frequency ones) appear in the top neighbour lists of many other words.
 
-Alexis Conneau et al. in \citeyear{muse} offered a method called cross-domain similarity local scaling (CSLS) to overcome this problem. They have reached 81.7\% accuracy for English-Spanish and 83.7\% for Spanish-English pairs for top-1500 source queries in a completely unsupervised mode. For English-Russian and Russian-English their results are not as high and they achieved accuracy of 51.7\% and 63.7\% respectively. Their FastText embeddings were trained on Wikipedia datasets for each respective language. Also they have published aligned embeddings for 30 languages \footnote{https://github.com/facebookresearch/MUSE}. Joulin et al. in \citeyear{joulin2018loss} found that convex relaxations of the CSLS loss improves the quality of bilingual word alignment. Also they have published aligned FastText vectors with vocabularies exceeding 2 million words and phrases \footnote{https://fasttext.cc/docs/en/aligned-vectors.html} (Fig. \ref*{wordvectors}).
+Alexis Conneau et al. in \citeyear{muse} offered a method called cross-domain similarity local scaling (CSLS) to overcome this problem. They reached 81.7\% accuracy for English-Spanish and 83.7\% for Spanish-English pairs for top-1500 source queries in a completely unsupervised mode. For English-Russian and Russian-English their results are not as high and they achieved accuracy of 51.7\% and 63.7\% respectively. Their FastText embeddings were trained on Wikipedia datasets for each respective language. They have published aligned embeddings for 30 languages \footnote{https://github.com/facebookresearch/MUSE}. Joulin et al. in \citeyear{joulin2018loss} found that convex relaxation of the CSLS loss improves the quality of bilingual word alignment. They have also published aligned FastText vectors with vocabularies of more than 2 million words and phrases \footnote{https://fasttext.cc/docs/en/aligned-vectors.html} (Fig. \ref*{wordvectors}).
 
 \section{Cross-lingual embeddings}
 
-MUSE is based on the work by Conneau et al.~\cite{muse}. It consists of two algorithms. The first one which is used only in unsupervised cases is a pair of adversarial neural networks. The first neural network is trained to predict from which distribution $\{X, Y\}$ embeddings come. The second neural networks is trained to modify embeddings $X$ multiplying it by matrix $W$ to prevent the first neural network from making accurate discriminations. Thus, at the end of the training we get a matrix $WX$ which is aligned with matrix $Y$.
+MUSE is based on the work by Conneau et al.~\cite{muse}. It consists of two algorithms. The first one which is used only in unsupervised scenarios is a pair of adversarial neural networks. The first neural network is trained to predict from which distribution $\{X, Y\}$ embeddings come. The second neural networks is trained to modify embeddings $X$ multiplying it by matrix $W$ to prevent the first neural network from making accurate discriminations. Thus, at the end of the training we get a matrix $WX$ which is aligned with matrix $Y$.
 
 \begin{figure}
 	
@@ -128,7 +128,7 @@ $$CSLS(x,y) = 2\cos(x,y) - sim_{source}(x, y)  - sim_{target}(y, x)$$
 Vecmap~\cite{vecmap} is close in its idea to the Procrustes refinement, it computes SVD-factorization SVD$(YX^T) = U\Sigma V^T$ and replaces $X$ and $Y$ with new matrices $X' = U$ and $Y' = V$. The authors also propose normalization and whitening (sphering) transformation. After applying whitening new matrices are equal to:
 $X' = {({X^T}X)}^{-\tfrac{1}{2}}$ and $Y' = {({Y^T}Y)}^{-\tfrac{1}{2}}$
 
-Jawanpuria et al.~\cite{jawanpuria} propose a method which is also based on SVD-factorization but in smooth Riemannian manifolds instead of Euclidean space.
+Jawanpuria et al.~\cite{jawanpuria} propose a method which is, likewise, based on SVD-factorization but in smooth Riemannian manifolds instead of Euclidean space.
 
 Joulin et al. in \citeyear{joulin2018loss} introduced a reformulation of CSLS that generalizes to convex functions (Relaxed CSLS loss). Due to the orthogonality constraint on $W$ and FastText vectors being $\ell_2$-normalized $\cos(Wx, y) = x^T W^Ty$ and $|| y - {W_X}_i ||^2_2 = 2 - 2x^TW^Ty$. The problem can be reformulated to find the $k$ elements of $Y$ which have the largest dot product with ${W_X}_i$. Thus, RCSLS can be written down as:
 
@@ -149,7 +149,7 @@ Thus, RCSLS can be solved using manifold optimization tools \cite{boumal2014mano
 	\caption{TSNE visualisation of WordNet synset SIF-embeddings}
 	\label{wordnet-pos}
 \end{figure}
-We reformulated the problem of synset finding as a binary classification problem. The task is to predict for the given (synset, lemma) pair if they are related or not. As the training/validation data we used English Princeton WordNet \cite{wordnet} provided by the NLTK package~\cite{nltk}. It contains 117'659 synsets. As positive examples we use (lemma, synset) pairs. As negative examples lemmas from other synsets with the same root are used (chicken.n.01 vs. chicken.n.02). We also added some random words because of the lack of negative examples. There were also attempts at augmenting the training data with the information from the Open Multilingual WordNet \cite{bond-wordnet}. For the final model we used only Finnish Open WordNet because it is 100\% full and allows to avoid bias towards Indo-European languages used for testing.
+We reformulated the problem of synset finding as a binary classification problem. The task is to predict for the given (synset, lemma) pair if they are related or not. As training/validation data we used English Princeton WordNet \cite{wordnet} provided by the NLTK package~\cite{nltk}. It contains 117'659 synsets. As positive examples we use (lemma, synset) pairs. As negative examples lemmas from other synsets with the same root are used (chicken.n.01 vs. chicken.n.02). We also added some random words because of scarcity of negative examples. There were also attempts at augmenting training data with the information from the Open Multilingual WordNet \cite{bond-wordnet}. For the final model we used only Finnish Open WordNet because it is 100\% full and allows to avoid implicit bias towards Indo-European languages used for testing.
 
 	\begin{table}[!htbp]
 	\small
@@ -191,7 +191,7 @@ Each synset vector is also augmented with information about its part-of-speech a
 Predicting synset relations is not a trivial task even in a monolingual setting. E.g. we failed to get any meaningful cluster representation for synsets using TSNE \cite{tsne} (Fig. \ref{wordnet-pos}). Moreover, there is not much training data and models are prone to overfitting. Thus, we introduced an ensemble of 4 LGBM-models \cite{lgbm} and 4 dense 3-layered fully-connected neural networks with dropout as regularization \cite{dropout}.
 In our case fine-tuning parameters using half of data not only did not bring any benefit to the final score but even decreased it significantly (about 3 F1-score points).
 
-We also attempted to fine tune input data using PCA (principal component analysis) and UMAP (Uniform Manifold Approximation and Projection) \cite{umap} but it did not provide any benefit and even decreased the results.
+We also attempted to fine tune input data using PCA (principal component analysis) and UMAP (Uniform Manifold Approximation and Projection) \cite{umap} but it did not provide any gains, and brought about worse results.
 
 For testing there were used two manually annotated datasets provided in the paper \cite{Khodak2017} for Russian and French languages respectively. Each dataset consists of 600 target language words from three parts of speech (nouns, verbs and adjectives). Each word has some true senses (synsets) and false ones (Table \ref{wordnet-test-data}). The original test procedure did not penalize models for synsets and words that they do not contain. In our case the RCSLS-model has full coverage of the dataset.
 
@@ -220,7 +220,7 @@ For testing there were used two manually annotated datasets provided in the pape
 A typical phrasing scheme used by Mikolov in Word2Vec (\citeyear{mikolov-representations-2013}) is a very simple	and rather efficient way to take phrase context into consideration and not just consider it as an average of constituents.
 $$score(w_i, w_j) = \frac{count(w_iw_j) - \delta}{count(w_i) * count(w_j)}$$
 
-Other metrics such as PMI \cite{bouma2009normalized} might be preferable. Yet we were limited by the pretrained embeddings in this work.
+Other metrics such as PMI \cite{bouma2009normalized} might have been preferable. Yet in this paper we were constrained by the availability of pretrained embeddings.
 
 <Examples of collocation wordnets>
 \section{WordNet construction}
@@ -302,7 +302,7 @@ Ensembling gives a major performance boost. However, it may be partially attribu
 	
 \end{table*}
 \section{Conclusion}
-Cross-lingual embeddings turned out to be an efficient method for cross-lingual WordNet extension. This technique is not only limited to WordNet construction. It can also be used for other types of similar structures (e.g. taxonomies and ontologies). We also published truncated and collocation WordNets for 44 languages which can be used in the future research.
+Cross-lingual embeddings turned out to be an efficient method for cross-lingual WordNet extension. This technique is not limited to WordNet construction, and can also be used for other types of similar structures (e.g. taxonomies and ontologies). We also published truncated and collocation WordNets for 44 languages which can be used in future research.
 
 Our work has shown that it is possible to build a WordNet for a new language without corpora or translation engines for the target language. Cross-lingual embeddings used in this work are fine-tuned with parallel dictionaries. However, an interesting direction of improvement would be to use fully-unsupervised models that do even rely on any parallel data at all.
 \section{Phraser}
