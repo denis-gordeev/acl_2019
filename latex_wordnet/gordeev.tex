@@ -24,6 +24,8 @@
 \usepackage{latexsym}
 \usepackage{url}
 
+\usepackage{placeins}
+
 \usepackage[utf8]{inputenc}
 \usepackage[russian,english]{babel}
 
@@ -76,7 +78,7 @@
 \begin{document}
 \maketitle
 \begin{abstract}
-Low-resource languages often lack structured text representations (taxonomies, ontologies and lexical databases). In this paper we propose a method for constructing WordNets from Princeton WordNet without translation data or parallel corpora. The proposed method uses cross-lingual word embeddings and outperforms translation-based techniques in F1-score. We also publish automatedly constructed general truncated WordNets and collocation WordNets for 44 languages (including non-European ones).
+Low-resource languages often lack structured text representations (taxonomies, ontologies and lexical databases). In this paper we propose a method for constructing WordNets from Princeton WordNet without translation data or parallel corpora. The proposed method uses cross-lingual word embeddings and outperforms translation-based techniques in F1-score. We also publish automatically constructed general truncated WordNets and collocation WordNets for 44 languages (including non-European ones) \footnote{temp. anonymous link for the review process}.
 \end{abstract}
 
 \section{Introduction}
@@ -93,6 +95,9 @@ In this paper we propose a method for constructing WordNets using cross-lingual 
 Word embeddings proved to be a powerful tool for dense text representations after papers by Bengio~\cite{bengio} and Mikolov~\cite{mikolov-representations-2013}. However, first word vector representation models were monolingual only. Soon researchers proposed cross-lingual word embedding models~\cite{mikolov-parallel}. There followed several improvements to the original model. In \citeyear{artetxe2016learning} Arxetxe et al. found that Procrustes refinement gets better results than the original linear transformation method by Mikolov. Also most earlier methods suffered from the "hubness problem" where some words (especially low frequency ones) appear in the top neighbour lists of many other words.
 
 Alexis Conneau et al. in \citeyear{muse} offered a method called cross-domain similarity local scaling (CSLS) to overcome this problem. They reached 81.7\% accuracy for English-Spanish and 83.7\% for Spanish-English pairs for top-1500 source queries in a completely unsupervised mode. For English-Russian and Russian-English their results are not as high and they achieved accuracy of 51.7\% and 63.7\% respectively. Their FastText embeddings were trained on Wikipedia datasets for each respective language. They have published aligned embeddings for 30 languages \footnote{https://github.com/facebookresearch/MUSE}. Joulin et al. in \citeyear{joulin2018loss} found that convex relaxation of the CSLS loss improves the quality of bilingual word alignment. They have also published aligned FastText vectors with vocabularies of more than 2 million words and phrases \footnote{https://fasttext.cc/docs/en/aligned-vectors.html} (Fig. \ref*{wordvectors}).
+
+Many researchers have used a similar method for detecting new hypernyms-hyponyms relations beyond WordNet for English. The work by \cite{sanchez2017well} has provided an overview of such methods. After getting rid of noisy hypernym-hyponym samples models may achieve models may achieve up to 81.2 \% in  accuracy score.
+
 
 \section{Cross-lingual embeddings}
 
@@ -146,7 +151,7 @@ Thus, RCSLS can be solved using manifold optimization tools \cite{boumal2014mano
 	\small
 	\includegraphics[scale=0.5]{wordnet-pos3}\\
 	
-	\caption{TSNE visualisation of WordNet synset SIF-embeddings}
+	\caption{t-SNE visualisation of WordNet synset SIF-embeddings}
 	\label{wordnet-pos}
 \end{figure}
 We reformulated the problem of synset finding as a binary classification problem. The task is to predict for the given (synset, lemma) pair if they are related or not. As training/validation data we used English Princeton WordNet \cite{wordnet} provided by the NLTK package~\cite{nltk}. It contains 117'659 synsets. As positive examples we use (lemma, synset) pairs. As negative examples lemmas from other synsets with the same root are used (chicken.n.01 vs. chicken.n.02). We also added some random words because of scarcity of negative examples. There were also attempts at augmenting training data with the information from the Open Multilingual WordNet \cite{bond-wordnet}. For the final model we used only Finnish Open WordNet because it is 100\% full and allows to avoid implicit bias towards Indo-European languages used for testing.
@@ -176,7 +181,7 @@ We reformulated the problem of synset finding as a binary classification problem
 	
 \end{table}
 
-Synset embeddings were calculated using averaged synset lemma embedding and the definition embedding. We used averaging weights 0.2 for the lemma and 0.8 for the definition. SIF (smooth inverse frequency) and TF-IDF (term frequency–inverse document frequency) averaging schemes were used for definition embeddings. SIF \cite{Arora2017} embeddings use pre-trained word vectors. For each sentence $s$ this model first creates a vectorized averaged representation $V_s$.
+Synset embeddings were calculated using averaged synset lemma embedding and the definition embedding. As lemma and definitions are in English, MUSE or RCSLS pretrained English models were employed for embeddings generation. We used averaging weights 0.2 for the lemma and 0.8 for the definition (best for the validation dataset). SIF (smooth inverse frequency) and TF-IDF (term frequency–inverse document frequency) averaging schemes were employed for definition embeddings. SIF \cite{Arora2017} embeddings use pre-trained word vectors. For each sentence $s$ this model first creates a vectorized averaged representation $V_s$.
 
 $$V_s = \dfrac{1}{|s|}\sum_{w \in s} \frac{a}{a + p(w)}V_w$$
 where $V_w$ is the word unigram probability and $a$ is a scalar (set to 1e-3 by default).
@@ -188,17 +193,32 @@ For each lemma we used its embedding from the corresponding cross-lingual pre-tr
 
 Each synset vector is also augmented with information about its part-of-speech and the synset number.
 
-Predicting synset relations is not a trivial task even in a monolingual setting. E.g. we failed to get any meaningful cluster representation for synsets using TSNE \cite{tsne} (Fig. \ref{wordnet-pos}). Moreover, there is not much training data and models are prone to overfitting. Thus, we introduced an ensemble of 4 LGBM-models \cite{lgbm} and 4 dense 3-layered fully-connected neural networks with dropout as regularization \cite{dropout} .
+Predicting synset relations is not a trivial task even in a monolingual setting. E.g. we failed to get any meaningful cluster representation for synsets using t-SNE (t-Distributed Stochastic Neighbor Embedding) \cite{tsne} (Fig. \ref{wordnet-pos}). Moreover, there is not much training data and models are prone to overfitting. Thus, we introduced an ensemble of 4 LightGBM-models (Gradient Boosting Machine) \cite{lgbm} and 4 dense 3-layered fully-connected neural networks with dropout as regularization \cite{dropout} (Fig. \ref{keras_model}). LightGBM is an efficient, fast and easy to use Gradient Boosting model \cite{natekin2013gradient}.
+
+In the neural network ReLU's (recurrent linear units) were used for activations of hidden fully-connected layers ($f(x) = max(0, x)$). Sigmoid activation was used for the output layer ($f(x) = \frac{e^x}{e^x + 1}$). Dropout rates were set as (0.2, 0.2, 0.1). As the loss function we used binary cross validation which can be derived from cross validation:
+\begin{align*}
+ CE = -\sum_{i}^{C}y_{i} log (\hat{y}_{i})
+\end{align*}
+where $y$ are true labels and $\hat{y}$ are predicted ones.
+For the binary case cross it transforms into:
+\begin{align*}
+CE = -\sum_{i}^{2}y_{i} log (\hat{y}_{i}) \\
+y_2 = 1 - y_1; \hat{y}_2 = 1 - \hat{y}_1 \\
+CE = - (y_1log(\hat{y}_1) + (1 - y)log(1 - \hat{y}_1))
+\end{align*}
+
+All models prediction probabilities were averaged. After that classes were inferred using the threshold computed on the validation set. A more sophisticated ensemble approach might have improved results, but voting and individual model weighting schemes showed worse results in our case.
 
 \begin{figure}[!htbp]
 	
 	\centering
 	\small
-	\includegraphics[scale=0.3]{keras_model}\\
+	\includegraphics[scale=0.4]{keras_model2}\\
 	
 	\caption{Keras model}
 	\label{keras_model}
 \end{figure}
+
 In our case fine-tuning parameters using half of test data for validation (and removing it from the final test dataset) not only did not bring any benefit to the final score but even decreased it significantly (about 3 F1-score points).
 
 We also attempted to fine tune input data using PCA (principal component analysis) and UMAP (Uniform Manifold Approximation and Projection) \cite{umap} but it did not provide any gains, and brought about worse results.
@@ -226,6 +246,14 @@ For testing there were used two manually annotated datasets provided in the pape
 \end{table*}
 
 
+\section{WordNet construction}
+In line with previous works \cite{Vossen1998,tufis2006romanian} we extend an existing WordNet and match words from the target language to existing Princeton WordNet synsets.
+
+Despite being easy to train, WordNet construction imposes significant computational problems in our case because for every word from the vocabulary we need to compare it with every possible synset. For this reason we used several heuristics. 1) removed strings with punctuation besides the underscore symbol. 2) identified language using \cite{Joulin2016} for each string (FastText embeddings are noisy and contain a lot of samples from other languages).  All computations were vectorized. Ensemble methods also are easy to parallelize using the multiprocessing realization in Python and using bufferized numpy-arrays allows to increase the batch size and avoid copying data \cite{gorelick2014high}.
+
+Preselected words using a simple model with a low threshold (0.2). However, we still had to limit the size of our WordNets. That is why we publish automated WordNets for all collocations and most common 10000 lemmas for 44 languages. To increase the quality of the generated models it was decided to sacrifice recall for the sake of precision and we increased the model confidence threshold to 0.6.
+
+
 \section{Multiword Expressions}
 \begin{figure}
 	
@@ -233,11 +261,11 @@ For testing there were used two manually annotated datasets provided in the pape
 	\small
 	\includegraphics[scale=0.3]{mwe}\\
 	
-	\caption{TSNE visualisation of averaged and FastText induced embeddings for MWE}
+	\caption{t-SNE visualisation of averaged and FastText induced embeddings for MWE}
 	\label{mwe}
 \end{figure}
 
-Multiword expressions (MWE) are notoriously difficult to process and to model. A typical phrasing scheme used by Mikolov in Word2Vec (\citeyear{mikolov-representations-2013}) is a very simple	and rather efficient way to take phrase context into consideration and not just consider it as an average of constituents \ref{mwe}.
+We generated not only truncated WordNets but also WordNets for multiword expressions. Multiword expressions (MWE) are notoriously difficult to process and to model \cite{sag2002multiword}. A typical phrasing scheme used by Mikolov in Word2Vec (\citeyear{mikolov-representations-2013}) is a very simple	and rather efficient way to take phrase context into consideration and not just consider it as an average of constituents \ref{mwe}.
 $$score(w_i, w_j) = \frac{count(w_iw_j) - \delta}{count(w_i) * count(w_j)}$$
 
 Other metrics such as PMI \cite{bouma2009normalized} or a special model for identifying MWE using a corpus like PARSEME \cite{savary2018parseme} might have been preferable. Yet in this work we were constrained by the multi-word expressions scheme used in pretrained embeddings.
@@ -248,37 +276,23 @@ Other metrics such as PMI \cite{bouma2009normalized} or a special model for iden
 	\centering
 	\begin{tabular}{|l|}
 		\hline
- nearest\_city \\
- fiscal\_code \\
- architectural\_style \\
- population\_metro \\
- winners\_share \\
- third\_team \\
- people\_from\_new\_orleans \\
- parent\_agency \\
- \hline
+		nearest\_city \\
+		fiscal\_code \\
+		architectural\_style \\
+		population\_metro \\
+		winners\_share \\
+		third\_team \\
+		people\_from\_new\_orleans \\
+		parent\_agency \\
+		\hline
 	\end{tabular}
 \end{table}
 
 Another problem with FastText MWE is that the model is trained using the Wikipedia corpora. This leads to many artifact multi-word expressions corresponding to Wikipedia categories (Fig \ref{mwe-wiki}). Still we decided to publish WordNet for this collocations as may of them are still relevant and correspond to multi-part verbs and collocations (e.g. 'take notes', 'take away'). It also highlights the importance of another approach for MWE in word embedding models.
-\section{WordNet construction}
-In line with previous works \cite{Vossen1998,tufis2006romanian} we extend an existing WordNet and match words from the target language to existing Princeton WordNet synsets.
 
-Despite being easy to train, WordNet construction imposes significant computational problems in our case because for every word from the vocabulary we need to compare it with every possible synset. For this reason we used several heuristics. 1) removed strings with punctuation besides the underscore symbol. 2) identified language using \cite{Joulin2016} for each string (FastText embeddings are noisy and contain a lot of samples from other languages).  All computations were vectorized. Ensemble methods also are easy to parallelize using the multiprocessing realization in Python and using bufferized numpy-arrays allows to increase the batch size and avoid copying data \cite{gorelick2014high}.
-
-Preselected words using a simple model with a low threshold (0.2). However, we still had to limit the size of our WordNets. That is why we publish automated WordNets for all collocations and most common 10000 lemmas for 44 languages. To increase the quality of the generated models it was decided to sacrifice recall for the sake of precision and we increased the model confidence threshold to 0.6.
 \section{Results}
 
-As can be seen from table \ref{wordnet-results} cross-lingual embedding methods outperform translation methods in most categories except Russian nouns without being fine-tuned on the test (as the work by Khodak). Actually, f1-score fine-tuning using the validation set even decreased the test set. Moreover, cross-lingual methods are reported to work in a completely unsupervised way. Even in the unsupervised mode they are easier to come by because because they require only a limited bilingual dictionary. High-quality translation engines are still inadequate for low-resource languages (and for many rare languages they reportedly outperform Transformer-based models \cite{laser}).
-
-Using information from another language is also helpful. It provides up to 1.5 F1-score point performance boost for some parts of speech. However, the English-only model also outperforms previous works for French and is slightly better than our best-performing model in verb representation. It should also be noted that in the experiments with MUSE-embeddings (not tested for RCSLS embeddings) data from other languages with smaller WordNets (e.g. Polish) from the Extended Open Multilingual WordNet decreased the results by 1.2 - 2 accuracy points for the validation dataset.
-
-The SIF embedding scheme provides an advantage of ~3.5 F1-score points in comparison with simple TF-IDF averaging.
-
-MUSE-embeddings perform slightly worse than RCSLS. However, it should be also noted that the vocabulary for MUSE embeddings is only 200'000 words vs ~ 2'000'000 for RCSLS. However, it should not have substantially influenced test results because of the chosen test procedure.
-
-Ensembling gives a major performance boost. However, it may be partially attributed to out lack of investment into fine-tuning of individual models. Individual models are also almost as performant for French as previous multi-stepped procedures that used translation engines and clustering. However, they fail for Russian which can be attributed to overfitting to the original English dataset. Simple averaging between models helps to mitigate it.
-\begin{table*}[!htb]
+\begin{table*}[h]
 	\small
 	\caption{Results for WordNet-synset prediction}
 	\label{wordnet-results}		
@@ -341,18 +355,24 @@ Ensembling gives a major performance boost. However, it may be partially attribu
 	\end{tabular}
 	
 \end{table*}
+
+As can be seen from table \ref{wordnet-results} cross-lingual embedding methods outperform translation methods in most categories except Russian nouns without being fine-tuned on the test (as the work by Khodak). Moreover, what we find amusing is that English validation set results are similar to the results for the test set. Actually, f1-score fine-tuning using the validation set even decreased the test set. Moreover, cross-lingual methods are reported to work in a completely unsupervised way. Even in the unsupervised mode they are easier to come by because because they require only a limited bilingual dictionary. High-quality translation engines are still inadequate for low-resource languages (and for many rare languages they reportedly outperform Transformer-based models \cite{laser}).
+
+Using information from another language is also helpful. It provides up to 1.5 F1-score point performance boost for some parts of speech. However, the English-only model also outperforms previous works for French and is slightly better than our best-performing model in verb representation. It should also be noted that in the experiments with MUSE-embeddings (not tested for RCSLS embeddings) data from other languages with smaller WordNets (e.g. Polish) from the Extended Open Multilingual WordNet decreased the results by 1.2 - 2 accuracy points for the validation dataset.
+
+The SIF embedding scheme provides an advantage of ~3.5 F1-score points in comparison with simple TF-IDF averaging.
+
+MUSE-embeddings perform slightly worse than RCSLS. However, it should be also noted that the vocabulary for MUSE embeddings is only 200'000 words vs ~ 2'000'000 for RCSLS. However, it should not have substantially influenced test results because of the chosen test procedure.
+
+Ensembling gives a major performance boost. However, it may be partially attributed to out lack of investment into fine-tuning of individual models. Individual models are also almost as performant for French as previous multi-stepped procedures that used translation engines and clustering. However, they fail for Russian which can be attributed to overfitting to the original English dataset. Simple averaging between models helps to mitigate it.
+
 \section{Conclusion}
-Cross-lingual embeddings turned out to be an efficient method for cross-lingual WordNet extension. This technique is not limited to WordNet construction, and can also be used for other types of similar structures (e.g. taxonomies and ontologies). We also published truncated and collocation WordNets for 44 languages which can be used in future research.
 
-Our work has shown that it is possible to build a WordNet for a new language without corpora or translation engines for the target language. Cross-lingual embeddings used in this work are fine-tuned with parallel dictionaries. However, an interesting direction of improvement would be to use fully-unsupervised models that do even rely on any parallel data at all.
-\section{Phraser}
-Moreover, what we find amusing is that English validation set results are similar to the results for the test set in another language.
+Cross-lingual embeddings turned out to be an efficient method for cross-lingual WordNet extension. This approach outperforms translation-based methods in F1-score. It also does not require costy translation engines and parallel corpora. This technique is not limited to WordNet construction, and can also be used for other types of similar structures (e.g. taxonomies and ontologies). Our approach can also be used for comparing various cross-lingual embedding models \cite{Bakarov2018}.
 
-Many researchers have used a similar method for detecting new hypernyms-hyponyms relations beyond WordNet for English. The work by \cite{sanchez2017well} has provided an overview of such methods. After getting rid of noisy hypernym-hyponym samples models may achieve models may achieve up to 81.2 \% in  accuracy score.
+We also published truncated and collocation WordNets for 44 languages which can be used in future research.
 
-Some works propose to change the embeddings training process to incorporate hierarchical information \cite{alsuhaibani}.
-
-Word embeddings methods are preferable for short texts~\cite{maslova-potapov}.
+An interesting direction of improvement would be to use fully-unsupervised models that do even rely on any parallel data at all.  As WordNets contain hyponym-hypernym relations, it would also be of interest to change the embeddings training process to incorporate hierarchical information \cite{alsuhaibani}.
 
 \bibliographystyle{acl_natbib}
 \bibliography{muse-wordnet}
