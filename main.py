@@ -565,7 +565,6 @@ def create_wordnets():
     punct += "\xa0—„…»゛–"
     ensemble = pickle.load(open("models/best2/ensemble.pcl", "rb"))
     nn_model = ensemble.models[4]
-    threshold = 0.41
 
     with open("synsets/synset_index.json") as f:
         r = f.read()
@@ -598,6 +597,7 @@ def create_wordnets():
         new_filename = f"muse_embeddings/{filename}"
         os.rename(filename, new_filename)
         lang_emb = load_embeddings(lang, muse=False)
+        os.remove(new_filename)
         # 1888418
         allowed_vocab = lang_emb.vocab
         print(len(allowed_vocab))
@@ -617,25 +617,29 @@ def create_wordnets():
         print(len(allowed_vocab))
         collocations = [w for w in allowed_vocab if "_" in w]
 
-        for v_i, v in enumerate(allowed_vocab):
-            print(f"{v_i:<5} {v:<20}", end="\r")
-            if v_i > 1000:
-                break
-            emb_v = lang_emb[v]
-            synset_mtx[:, :300] = emb_v
-            preds = predict_binary(ensemble,
-                                   synset_mtx,
-                                   threshold=0.51)
-            synsets = np.where(preds == 1)[0]
-            # preds = nn_model.predict(synset_mtx).T[0]
-            # synsets = np.where(preds > 0.95)[0]
-            if len(synsets) > 10:
+        for dataset_i, dataset in [allowed_vocab, collocations]:
+            coloc = "colocations" if dataset_i == 1 else "all"
+            f_lang = open(f"wordnets_constructed/{coloc}_{lang}", "a")
+            if os.path.exists(f_lang):
                 continue
-            synsets = [reverse_index[s] for s in synsets]
-            for s in synsets:
-                f_lang.write("{}\t{}\n".format(v, s))
-        os.remove(new_filename)
-        f_lang.close()
+            for v_i, v in enumerate(dataset):
+                print(f"{v_i:<5} {v:<20}", end="\r")
+                if v_i > 1000:
+                    break
+                emb_v = lang_emb[v]
+                synset_mtx[:, :300] = emb_v
+                preds = predict_binary(ensemble,
+                                       synset_mtx,
+                                       threshold=0.6)
+                synsets = np.where(preds == 1)[0]
+                # preds = nn_model.predict(synset_mtx).T[0]
+                # synsets = np.where(preds > 0.95)[0]
+                if len(synsets) > 10:
+                    continue
+                synsets = [reverse_index[s] for s in synsets]
+                for s in synsets:
+                    f_lang.write("{}\t{}\n".format(v, s))
+            f_lang.close()
 
 
 if __name__ == "__main__":

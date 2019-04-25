@@ -78,7 +78,7 @@
 \begin{document}
 \maketitle
 \begin{abstract}
-Low-resource languages often lack structured text representations (taxonomies, ontologies and lexical databases). In this paper we propose a method for constructing WordNets from Princeton WordNet without translation engines or parallel corpora. The proposed method uses cross-lingual word embeddings and outperforms translation-based techniques in F1-score. We also publish automatically constructed general truncated WordNets and collocation WordNets for 44 languages (including non-European ones) \footnote{temp. anonymous link for the review process}.
+Low-resource languages often lack structured text representations (taxonomies, ontologies and lexical databases). In this paper we propose a method for constructing WordNets from Princeton WordNet without translation engines or parallel corpora. The proposed method uses cross-lingual word embeddings and outperforms translation-based techniques in F1-score. We also publish automatically constructed general truncated WordNets and collocation WordNets for 44 languages (including non-European ones) \footnote{link removed to stay anonymous for the review process}.
 \end{abstract}
 
 \section{Introduction}
@@ -247,12 +247,11 @@ For testing there were used two manually annotated datasets provided in the pape
 
 
 \section{WordNet construction}
-In line with previous works \cite{Vossen1998,tufis2006romanian} we extend an existing WordNet and match words from the target language to existing Princeton WordNet synsets.
+In line with previous works \cite{Vossen1998,tufis2006romanian} we extend an existing WordNet and match words from the target language to existing Princeton WordNet synsets. For this we use our ensemble model: for every word we predict its synsets.
 
-Despite being easy to train, WordNet construction imposes significant computational problems in our case because we need to compare each word from the vocabulary with every possible synset. For this reason we used several heuristics. 1) removed strings with punctuation besides the underscore symbol. 2) identified language using \cite{Joulin2016} for each string (FastText embeddings are noisy and contain a lot of samples from other languages).  All computations were vectorized. Also we produced synsets for several words at once in batches. Ensemble methods also are easy to parallelize using the multiprocessing realization in Python and using bufferized numpy-arrays allows to increase the batch size and avoid copying data \cite{gorelick2014high}.
+Despite being easy to train, WordNet construction imposes significant computational problems in our case because we need to compare each word from the vocabulary with every possible synset. Luckily it is possible to predict all synsets for one word in a single batch. However, to ease computation requirements we used several heuristics. 1) removed strings with punctuation besides the underscore symbol. 2) identified language using \cite{Joulin2016} for each string (FastText embeddings are noisy and contain a lot of samples from other languages).  All computations were vectorized. Also we produced synsets for several words at once in batches. Ensemble methods also are easy to parallelize using the multiprocessing realization in Python and using bufferized numpy-arrays allows to increase the batch size and avoid copying data \cite{gorelick2014high}.
 
 Candidate synsets were preselected using a simple model with a low threshold (0.2). However, we still had to limit the size of our WordNets. That is why we publish automated WordNets for all collocations and most common 10000 lemmas for 44 languages. To increase the quality of the generated models it was decided to sacrifice recall for the sake of precision and we increased the model confidence threshold to 0.6.
-
 
 \section{Multiword Expressions}
 \begin{figure}
@@ -289,6 +288,11 @@ Other metrics such as PMI \cite{bouma2009normalized} or a special model for iden
 \end{table}
 
 Another problem with FastText MWE is that the model is trained using the Wikipedia corpora. This leads to many artifact multi-word expressions corresponding to Wikipedia categories (Fig \ref{mwe-wiki}). Still we decided to publish WordNet for this collocations as many of them are still relevant and correspond to multi-part verbs and real collocations (e.g. 'take notes', 'take away'). It also highlights the importance of another approach for MWE in word embedding models.
+
+Тоталитарная секта (totalitarian cult)
+'terrorization.n.02',
+'cult.n.04',
+'revolutionary\_organization\_17\_november.n.01'
 
 \section{Results}
 
