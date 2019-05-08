@@ -287,13 +287,31 @@ Other metrics such as PMI \cite{bouma2009normalized} or a special model for iden
 	\end{tabular}
 \end{table}
 
-Another problem with FastText MWE is that the model is trained using the Wikipedia corpora. This leads to many artifact multi-word expressions corresponding to Wikipedia categories (Fig \ref{mwe-wiki}). Still we decided to publish WordNet for this collocations as many of them are still relevant and correspond to multi-part verbs and real collocations (e.g. 'take notes', 'take away'). It also highlights the importance of another approach for MWE in word embedding models.
+Another problem with FastText MWE is that the model is trained using the Wikipedia corpora. This leads to many artifact multi-word expressions corresponding to Wikipedia categories (Fig \ref{mwe-wiki}). Besides some synsets tend to be too general or of a wrong part of speech (Fig. \ref{mwe-results}). Still we decided to publish WordNet for this collocations as many of them are still relevant and correspond to multi-part verbs and real collocations (e.g. 'take notes', 'take away'). It also highlights the importance of another approach for MWE in word embedding models. Also some language embeddings do no contain any collocations (e.g. Korean).
+\begin{table}[tp]
+	\small
+	\caption{Synset matching for MWE}
+	\label{mwe-results}
+	\centering
+	\begin{tabular}{l l}
+		\hline
+		MWE & Synsets
+		\\
+		\hline
+		\multirow{3}{*}{\shortstack[l]{\\ \begin{otherlanguage*}{russian}Тоталитарная секта \end{otherlanguage*}  \\ (totalitarian cult) (Russian)}}
+		& \multicolumn{1}{l}{terrorization.n.02} \\
+		& \multicolumn{1}{l}{cult.n.04} \\
+		& \multicolumn{1}{l}{\shortstack{revolutionary\_organization\_\\ 17 november.n.01}} \\
+		\hline
+		\multirow{2}{*}{zweiter weltkrieg (German)}
+		& \multicolumn{1}{l}{nazify.v.01} \\
+		& \multicolumn{1}{l}{blitzkrieg.v.01} \\ \hline
+		\multirow{2}{*}{\shortstack{gospodarska regija \\ (economic region) (Croatian)}}
+		& \multicolumn{1}{l}{economic\_geography.n.01} \\
+		& \multicolumn{1}{l}{zone.v.01} \\ \hline
 
-Тоталитарная секта (totalitarian cult)
-'terrorization.n.02',
-'cult.n.04',
-'revolutionary\_organization\_17\_november.n.01'
-
+	\end{tabular}
+\end{table}
 \section{Results}
 
 \begin{table*}[h]

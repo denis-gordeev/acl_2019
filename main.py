@@ -587,7 +587,7 @@ def create_wordnets():
     lang_model = fastText.load_model("muse_embeddings/lid.176.bin")
     for lang in langs:
         print(f"---{lang}---")
-        if os.path.exists(f"wordnets_constructed/coloc_{lang}"):
+        if os.path.exists(f"wordnets_constructed/all_{lang}_2"):
             continue
         f_lang = open(f"wordnets_constructed/coloc_{lang}", "a")
         url = "https://dl.fbaipublicfiles.com/fasttext/"\
@@ -600,7 +600,7 @@ def create_wordnets():
         os.remove(new_filename)
         # 1888418
         allowed_vocab = lang_emb.vocab
-        print(len(allowed_vocab))
+        print("allowed vocab len", len(allowed_vocab))
         # 1597995
         allowed_vocab = [w for w in allowed_vocab
                          if not any(p in w for p in punct)]
@@ -614,17 +614,18 @@ def create_wordnets():
                          if langs[w_i] == lang]
         # 1037102
         allowed_vocab = [w for w in allowed_vocab if len(w) >= 3]
-        print(len(allowed_vocab))
-        collocations = [w for w in allowed_vocab if "_" in w]
-
-        for dataset_i, dataset in [allowed_vocab, collocations]:
+        print("final allowed vocab len", len(allowed_vocab))
+        collocations = [w for w in allowed_vocab if "_" in w and
+                        len([l for l in w.split("_") if l]) > 1]
+        print("collocations len", len(collocations))
+        for dataset_i, dataset in enumerate([allowed_vocab, collocations]):
             coloc = "colocations" if dataset_i == 1 else "all"
-            f_lang = open(f"wordnets_constructed/{coloc}_{lang}", "a")
-            if os.path.exists(f_lang):
-                continue
+            f_lang = open(f"wordnets_constructed/{coloc}_{lang}_2", "a")
+            # if os.path.exists(f_lang):
+            #     continue
             for v_i, v in enumerate(dataset):
                 print(f"{v_i:<5} {v:<20}", end="\r")
-                if v_i > 1000:
+                if v_i > 10000:
                     break
                 emb_v = lang_emb[v]
                 synset_mtx[:, :300] = emb_v
