@@ -557,6 +557,7 @@ def save_ensemble(ensemble, folder="models"):
 
 
 def create_wordnets():
+    version = 2
     langs = ['af', 'ar', 'bg', 'bn', 'bs', 'ca', 'cs', 'da', 'de', 'el', 'en',
              'es', 'et', 'fa', 'fi', 'fr', 'he', 'hi', 'hr', 'hu', 'id', 'it',
              'ko', 'lt', 'lv', 'mk', 'ms', 'nl', 'no', 'pl', 'pt', 'ro', 'ru',
@@ -582,14 +583,17 @@ def create_wordnets():
                             )
     synset_zeros[:, 300:] = synset_mtx
     synset_mtx = synset_zeros
-
+    batch_mtx = np.zeros(shape=(2000000, synset_mtx.shape[1]))  # 2 mln rows
+    batch_mtx_len = batch_mtx.shape[0]
     # predicts the language of the word
     lang_model = fastText.load_model("muse_embeddings/lid.176.bin")
     for lang in langs:
-        print(f"---{lang}---")
-        if os.path.exists(f"wordnets_constructed/all_{lang}_2"):
+        if os.path.exists(
+                f"wordnets_constructed/colocations_{lang}_{version}"):
             continue
-        f_lang = open(f"wordnets_constructed/coloc_{lang}", "a")
+        print(f"---{lang}---")
+        # if os.path.exists(f"wordnets_constructed/all_{lang}_2"):
+        #     continue
         url = "https://dl.fbaipublicfiles.com/fasttext/"\
               f"vectors-aligned/wiki.{lang}.align.vec"
         wget.download(url)
@@ -597,7 +601,8 @@ def create_wordnets():
         new_filename = f"muse_embeddings/{filename}"
         os.rename(filename, new_filename)
         lang_emb = load_embeddings(lang, muse=False)
-        os.remove(new_filename)
+        if lang not in ("ru", "fr", "en"):
+            os.remove(new_filename)
         # 1888418
         allowed_vocab = lang_emb.vocab
         print("allowed vocab len", len(allowed_vocab))
@@ -620,26 +625,75 @@ def create_wordnets():
         print("collocations len", len(collocations))
         for dataset_i, dataset in enumerate([allowed_vocab, collocations]):
             coloc = "colocations" if dataset_i == 1 else "all"
-            f_lang = open(f"wordnets_constructed/{coloc}_{lang}_2", "a")
-            # if os.path.exists(f_lang):
-            #     continue
+            f_lang_name = f"wordnets_constructed/{coloc}_{lang}_{version}"
+            if os.path.exists(f_lang_name):
+                with open(f_lang_name) as f:
+                    processed = f.readlines()
+                processed = [t.split("\t")[0] for t in processed]
+                if processed:
+                    last_processed = dataset.index(processed[-1])
+                    dataset = dataset[last_processed + 1:]
+            else:
+                last_processed = 0
+
+            f_lang = open(f_lang_name, "a")
+            last_batch_ind = 0
+            batch_dict = dict()
+
             for v_i, v in enumerate(dataset):
                 print(f"{v_i:<5} {v:<20}", end="\r")
-                if v_i > 10000:
+                if v_i + last_processed > 10000:
                     break
                 emb_v = lang_emb[v]
                 synset_mtx[:, :300] = emb_v
-                preds = predict_binary(ensemble,
-                                       synset_mtx,
-                                       threshold=0.6)
-                synsets = np.where(preds == 1)[0]
-                # preds = nn_model.predict(synset_mtx).T[0]
-                # synsets = np.where(preds > 0.95)[0]
-                if len(synsets) > 10:
-                    continue
-                synsets = [reverse_index[s] for s in synsets]
-                for s in synsets:
-                    f_lang.write("{}\t{}\n".format(v, s))
+
+                prelim_preds = nn_model.predict(synset_mtx)
+                prelim_preds = prelim_preds.T[0]
+
+                selected_preds = np.where(prelim_preds > 0.1)[0]
+                preds_len = selected_preds.shape[0]
+
+                if preds_len >= batch_mtx_len - last_batch_ind or\
+                        v_i == len(dataset) - 1:
+                    # then predict the batch and reset it
+                    preds = predict_binary(ensemble,
+                                           # to save processor time (doubtful?)
+                                           batch_mtx[:last_batch_ind],
+                                           threshold=0.6)
+                    synsets = np.where(preds == 1)[0]
+                    for batch_k, batch_v in batch_dict.items():
+                        batch_synsets = []
+                        low_lim, up_lim = batch_v[:2]
+                        for s_i, s in enumerate(synsets):
+                            if low_lim <= s < up_lim:
+                                s -= low_lim
+                                batch_synsets.append(s)
+                            # the lower limit is always respected
+                            else:
+                                synsets = synsets[s_i:]
+                                break
+                        if len(batch_synsets) > 10:
+                            continue
+                        batch_synsets = [
+                            reverse_index[s] for s in batch_synsets]
+                        for s in batch_synsets:
+                            print(batch_k, s)
+                            f_lang.write("{}\t{}\n".format(batch_k, s))
+                    # reset the batch
+                    last_batch_ind = 0
+                    batch_dict = dict()
+                # add new rows to the batch matrix
+
+                # update upper limit
+                upper_lim = last_batch_ind + preds_len
+                # set batch to new values
+                batch_mtx[
+                    last_batch_ind: upper_lim] = synset_mtx[selected_preds]
+                # memorize batch info
+                batch_dict[v] = (last_batch_ind, upper_lim, selected_preds)
+                # update last_batch_ind
+                last_batch_ind = upper_lim
+
             f_lang.close()
 
 
