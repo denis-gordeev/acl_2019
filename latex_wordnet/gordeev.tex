@@ -264,6 +264,18 @@ Candidate synsets were preselected using a simple model with a low threshold (0.
 	\label{mwe}
 \end{figure}
 
+\section{WordNet Generation Pipeline}
+\begin{figure}
+	
+	\centering
+	\small
+	\includegraphics[scale=0.6]{pipeline}\\
+	
+	\caption{The pipeline showing WordNet generation using cross-lingual embeddings}
+	\label{pipeline}
+\end{figure}
+
+
 We generated not only truncated WordNets but also WordNets for multiword expressions. Multiword expressions (MWE) are notoriously difficult to process and to model \cite{sag2002multiword}. A typical phrasing scheme used by Mikolov in Word2Vec (\citeyear{mikolov-representations-2013}) is a very simple	and rather efficient way to take phrase context into consideration and not just consider it as an average of its constituents \ref{mwe}.
 $$score(w_i, w_j) = \frac{count(w_iw_j) - \delta}{count(w_i) * count(w_j)}$$
 

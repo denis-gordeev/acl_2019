@@ -27,6 +27,7 @@ from sklearn.manifold import TSNE
 # from sklearn.model_selection import RepeatedStratifiedKFold
 
 import wget
+from bert_serving.client import BertClient
 
 from utils import load_embeddings, train_gbm
 from utils_d.utils import text_pipeline
@@ -98,8 +99,17 @@ def get_synset_pos(synset):
     return pos
 
 
-def construct_feature_vector(lemma, emb, synset_vec, add_vec, augment=True):
-    lemma_vec = emb[lemma]
+def construct_feature_vector(lemma, synset_vec, add_vec,
+                             all_lemmas,
+                             augment=True, emb=None,
+                             all_lemmas_vecs=None):
+    if emb:
+        lemma_vec = emb[lemma]
+    # No embeddings loaded; use Bert
+    elif type(all_lemmas_vecs) is np.ndarray and lemma in all_lemmas:
+        lemma_vec = all_lemmas_vecs[all_lemmas[lemma]]
+    else:
+        lemma_vec = get_bert_embeddings([lemma])[0]
     vectors = [lemma_vec, synset_vec]
     if augment:
         vectors.append(add_vec)
@@ -109,12 +119,14 @@ def construct_feature_vector(lemma, emb, synset_vec, add_vec, augment=True):
     return vector
 
 
-def create_synset_dataset(synsets, syn_names, all_lemmas, emb, syn_mtx,
+def create_synset_dataset(synsets, syn_names, all_lemmas, syn_mtx,
                           syn_ind, pos_limit="",
-                          add_zeroes=True):
+                          emb=None,
+                          add_zeroes=True,
+                          all_lemmas_vecs=None):
     X = []
     Y = []
-
+    all_lemmas_keys = list(all_lemmas.keys())
     for k, v in synsets.items():
         name = "".join(k.split(".")[:-2])
         pos = get_synset_pos(k)
@@ -124,38 +136,48 @@ def create_synset_dataset(synsets, syn_names, all_lemmas, emb, syn_mtx,
             continue
         meaning = k.split(".")[-1]
         meaning = int(meaning) / 60
-        v = {lemma for lemma in v if lemma in emb and lemma != name}
+        if emb:
+            v = {lemma for lemma in v if lemma in emb}
+        # v = {lemma for lemma in v if lemma != name}
         name_lemmas = syn_names[name]
-        name_lemmas = {lemma for lemma in name_lemmas if lemma in emb and
-                       lemma != name}
+        if emb:
+            name_lemmas = {lemma for lemma in name_lemmas if lemma in emb}
+        # name_lemmas = {lemma for lemma in name_lemmas if lemma != name}
         union = name_lemmas & v
         difference = name_lemmas.difference(v)
         add_vec = [meaning] + pos
         k_vec = syn_mtx[syn_ind[k]]
         for lemma in union:
-            vector = construct_feature_vector(lemma, emb, k_vec, add_vec)
+            vector = construct_feature_vector(
+                lemma, k_vec, add_vec, all_lemmas, emb=emb,
+                all_lemmas_vecs=all_lemmas_vecs)
             X.append(vector)
             Y.append(1)
         for lemma in difference:
-            vector = construct_feature_vector(lemma, emb, k_vec, add_vec)
+            vector = construct_feature_vector(
+                lemma, k_vec, add_vec, all_lemmas, emb=emb,
+                all_lemmas_vecs=all_lemmas_vecs)
             X.append(vector)
             Y.append(0)
         left_random = len(union) - len(difference)
         if add_zeroes:
             if left_random > 0:
                 for i in range(left_random):
-                    random_lemma = random.choice(all_lemmas)
+                    random_lemma = random.choice(all_lemmas_keys)
                     if random_lemma not in v:
                         vector = construct_feature_vector(
-                            random_lemma, emb, k_vec, add_vec)
+                            random_lemma, k_vec, add_vec, all_lemmas, emb=emb,
+                            all_lemmas_vecs=all_lemmas_vecs)
                         X.append(vector)
                         Y.append(0)
     return X, Y
 
 
-def create_all_lemmas(synsets, emb):
+def create_all_lemmas(synsets, emb=None):
     all_lemmas = list(set([w for v in synsets.values() for w in v]))
-    all_lemmas = [l for l in all_lemmas if l in emb]
+    if emb:
+        all_lemmas = [l for l in all_lemmas if l in emb]
+    all_lemmas = {l: l_i for l_i, l in enumerate(all_lemmas)}
     return all_lemmas
 
 
@@ -235,7 +257,7 @@ def calculate_threshold(model, x_test, y_test):
     return threshold
 
 
-def load_khodak_dataset(lang, lang_emb, synsets):
+def load_khodak_dataset(lang, synsets, lang_emb=None):
     if lang not in ("ru", "fr"):
         return None
     with open(f"other_works/pawn/{lang}_matches.txt") as f:
@@ -262,7 +284,8 @@ def load_khodak_dataset(lang, lang_emb, synsets):
             if synset in synsets:
                 khodak_data.append([lang_word, synset, target, pos])
     # not_found = len([l for l in khodak_data if l[0] not in ru_emb])
-    khodak_data = [l for l in khodak_data if l[0] in lang_emb]
+    if type(lang_emb) == np.ndarray or lang_emb:
+        khodak_data = [l for l in khodak_data if l[0] in lang_emb]
     khodak_df = pd.DataFrame(
         khodak_data, columns=[lang, "synset", "target", "pos"])
     khodak_df["target"] = khodak_df["target"].astype(int)
@@ -300,10 +323,20 @@ def plot_synsets(synset_matrix, synset_list):
              path="wordnet_", show_figures=False)
 
 
+def get_bert_embeddings(sentences: List[str]):
+    if bc:
+        local_bc = bc
+    else:
+        local_bc = BertClient(ip='10.8.0.3')  # ip address of the GPU machine
+    embeddings = local_bc.encode(sentences)
+    return embeddings
+
+
 def april_khodak():
+    USE_BERT = True
     USE_FOREIGN = True
     ADD_ZEROES = True
-    USE_KFOLD = True
+    USE_KFOLD = False
     TFIDF = True
     USE_SIF = True
     USE_MUSE = True
@@ -313,9 +346,12 @@ def april_khodak():
     USE_UMAP = False
     if USE_SIF:
         TFIDF = False
-
-    eng_emb = load_embeddings("en", muse=USE_MUSE)
-
+    if not USE_BERT:
+        eng_emb = load_embeddings("en", muse=USE_MUSE)
+        vector_size = eng_emb.vector_size
+    else:
+        vector_size = 768
+        eng_emb = None
     stops = set(stopwords.words('english'))
     # get synsets + their lemmas
     # 117659 synsets
@@ -332,7 +368,9 @@ def april_khodak():
     for s in synsets:
         definition = wordnet.synset(s).definition()
         definition = text_pipeline(definition, lemmatize=False)
-        definition = [w for w in definition if w not in stops and w in eng_emb]
+        if not USE_BERT:
+            definition = [w for w in definition if
+                          w not in stops and w in eng_emb]
         # if not definition:
         #     print(wordnet.synset(s).definition())
         if definition:
@@ -346,7 +384,7 @@ def april_khodak():
     with open(f'synsets/synset_index.json', 'w') as outfile:
         json.dump(synset_index, outfile)
 
-    if TFIDF:
+    if TFIDF and not USE_BERT:
         vocabulary = {w for d in definitions.values() for w in d}
         vocabulary = {v: v_i for v_i, v in enumerate(vocabulary)}
 
@@ -356,62 +394,72 @@ def april_khodak():
             vocabulary=vocabulary.keys())
         vectorizer = vectorizer.fit(definitions.values())
     synset_matrix = np.zeros(
-        shape=(len(synset_index), eng_emb.vector_size))
+        shape=(len(synset_index), vector_size))
     # np.save('models/synset_mtx.npy', synset_matrix)
-    if USE_SIF:
+    if USE_BERT:
+        sentences = list(definitions.values())
+        sentences = [" ".join(s) for s in sentences]
+        synset_matrix = get_bert_embeddings(sentences)
+    elif USE_SIF:
         synset_matrix = sif_embeddings(eng_emb, definitions.values())
-    for s_i, s in enumerate(synset_list):
-        print("\t", s_i, s, len(synset_list), end="\r")
-        lemmas = synsets[s]
-        weights = (0.2, 0.8)
-        # averaged; e.g. pass_away <- np.mean(eng_emb[["pass", "away"]])
-        # secondary_lemmas = False
-        no_lemmas = False
-        emb_lemmas = [l for l in lemmas if l in eng_emb]
-        if not emb_lemmas:
-            lemmas = [l.split("_") for l in lemmas if "_" in l]
-            lemmas = [l for l in lemmas if
-                      all(w in eng_emb for w in l)]
-            if lemmas:
-                # gensim KeyedVectors also accept lists of words
-                embeddings = [np.mean(eng_emb[l], axis=0) for l in lemmas]
-                embeddings = np.mean(embeddings, axis=0)
+    if not USE_BERT:
+        for s_i, s in enumerate(synset_list):
+            print("\t", s_i, s, len(synset_list), end="\r")
+            lemmas = synsets[s]
+            weights = (0.2, 0.8)
+            # averaged; e.g. pass_away <- np.mean(eng_emb[["pass", "away"]])
+            # secondary_lemmas = False
+            no_lemmas = False
+            emb_lemmas = [l for l in lemmas if l in eng_emb]
+            if not emb_lemmas:
+                lemmas = [l.split("_") for l in lemmas if "_" in l]
+                lemmas = [l for l in lemmas if
+                          all(w in eng_emb for w in l)]
+                if lemmas:
+                    # gensim KeyedVectors also accept lists of words
+                    embeddings = [np.mean(eng_emb[l], axis=0) for l in lemmas]
+                    embeddings = np.mean(embeddings, axis=0)
+                else:
+                    no_lemmas = True
             else:
-                no_lemmas = True
-        else:
-            lemmas = emb_lemmas
-            # gensim KeyedVectors also accept lists of words
-            embeddings = eng_emb[lemmas]
-            embeddings = np.average(embeddings, axis=0)
+                lemmas = emb_lemmas
+                # gensim KeyedVectors also accept lists of words
+                embeddings = eng_emb[lemmas]
+                embeddings = np.average(embeddings, axis=0)
 
-        def_weights = None
-        if TFIDF:
-            definition = definitions[s]
-            def_weights = vectorizer.transform(
-                [definition]).toarray()[0]
-            def_weights = [def_weights[vocabulary[w]]
-                           for w in definition]
-            definition_emb = np.average(eng_emb[definition], axis=0,
-                                        weights=def_weights)
-        else:
             def_weights = None
-            definition_emb = synset_matrix[s_i]
-        if not no_lemmas:
-            embeddings = np.average([embeddings, definition_emb],
-                                    weights=weights, axis=0)
-        else:
-            embeddings = definition_emb
-        # I havent checked the case when there are no lemmas and no definition
-        # but there isnt such a case
+            if TFIDF:
+                definition = definitions[s]
+                def_weights = vectorizer.transform(
+                    [definition]).toarray()[0]
+                def_weights = [def_weights[vocabulary[w]]
+                               for w in definition]
+                definition_emb = np.average(eng_emb[definition], axis=0,
+                                            weights=def_weights)
+            else:
+                def_weights = None
+                definition_emb = synset_matrix[s_i]
+            if not no_lemmas:
+                embeddings = np.average([embeddings, definition_emb],
+                                        weights=weights, axis=0)
+            else:
+                embeddings = definition_emb
+            # I havent checked the case when there are no lemmas and no definition
+            # but there isnt such a case
 
-        synset_matrix[s_i] = embeddings
+            synset_matrix[s_i] = embeddings
     # prepare dataset
     synset_names = create_synset_names_dict(synsets)
 
     all_lemmas = create_all_lemmas(synsets, eng_emb)
+    if USE_BERT:
+        all_lemmas_vecs = get_bert_embeddings(all_lemmas)
+    else:
+        all_lemmas_vecs = None
     X, Y = create_synset_dataset(
-        synsets, synset_names, all_lemmas, eng_emb, synset_matrix,
-        synset_index, add_zeroes=ADD_ZEROES, pos_limit=POS_LIMIT)
+        synsets, synset_names, all_lemmas, synset_matrix,
+        synset_index, add_zeroes=ADD_ZEROES, pos_limit=POS_LIMIT, emb=eng_emb,
+        all_lemmas_vecs=all_lemmas_vecs)
 
     lang_embeddings = {"fi": "fin",
                        # "pl": "pol",
@@ -427,9 +475,9 @@ def april_khodak():
             lang_lemmas = create_all_lemmas(lang_synsets, lang_emb)
 
             lang_X, lang_Y = create_synset_dataset(
-                lang_synsets, lang_name_synsets, lang_lemmas, lang_emb,
+                lang_synsets, lang_name_synsets, lang_lemmas,
                 synset_matrix, synset_index,
-                add_zeroes=ADD_ZEROES)
+                add_zeroes=ADD_ZEROES, emb=lang_emb)
             X += lang_X
             Y += lang_Y
 
@@ -468,9 +516,12 @@ def april_khodak():
         ensemble_threshold = calculate_threshold(ensemble, x_test, y_test)
 
     for lang in ["ru", "fr"]:
-        print(lang)
-        lang_emb = load_embeddings(lang, muse=USE_MUSE)
-        khodak_df = load_khodak_dataset(lang, lang_emb, synsets)
+        if not USE_BERT:
+            print(lang)
+            lang_emb = load_embeddings(lang, muse=USE_MUSE)
+        else:
+            lang_emb = None
+        khodak_df = load_khodak_dataset(lang, synsets, lang_emb=lang_emb)
         f1_scores = []
         pos_s = ["", "n", "a", "v"]
         for pos in pos_s:
@@ -478,8 +529,13 @@ def april_khodak():
                 pred_df = khodak_df
             else:
                 pred_df = khodak_df[khodak_df["pos"] == pos]
-
-            lang_input = lang_emb[pred_df[lang].values]
+            if lang_emb:
+                lang_input = lang_emb[pred_df[lang].values]
+            else:
+                # should have used unique and then map, but I'm too lazy
+                # the difference is about 10x times
+                lang_input = list(pred_df[lang].values)
+                lang_input = get_bert_embeddings(lang_input)
             # embeddings for all ru words
             eng_input = [synset_index[s] for s in pred_df["synset"].values]
             # embeddings for all eng words
@@ -699,5 +755,5 @@ def create_wordnets():
 
 if __name__ == "__main__":
     # main()
-    # april_khodak()
-    create_wordnets()
+    april_khodak()
+    # create_wordnets()
