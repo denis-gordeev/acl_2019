@@ -40,6 +40,10 @@ from SIF.src.SIF_embedding import SIF_embedding
 # from utils_d.ml_utils import create_word_index
 
 
+# bert client
+bc = None
+
+
 def keras_model(x_train, y_train, x_test, y_test):
     es = EarlyStopping(monitor='val_loss', min_delta=0, patience=5,
                        verbose=0, mode='auto')
@@ -193,7 +197,7 @@ def k_fold_training(X_, Y_, tr_function, num_folds=5):
     return models
 
 
-def sif_embeddings(emb, sentences: List):
+def sif_embeddings(emb, sentences: dict):
     counter = Counter()
     for s in sentences:
         for w in s:
@@ -334,12 +338,12 @@ def get_bert_embeddings(sentences: List[str]):
 
 def april_khodak():
     USE_BERT = True
-    USE_FOREIGN = True
+    USE_FOREIGN = False
     ADD_ZEROES = True
     USE_KFOLD = False
-    TFIDF = True
-    USE_SIF = True
-    USE_MUSE = True
+    TFIDF = False
+    USE_SIF = False
+    USE_MUSE = False
     POS_LIMIT = None
     USE_PCA = False
     FINE_TUNE_KHODAK = False
@@ -350,6 +354,8 @@ def april_khodak():
         eng_emb = load_embeddings("en", muse=USE_MUSE)
         vector_size = eng_emb.vector_size
     else:
+        global bc
+        bc = BertClient(ip='10.8.0.3')
         vector_size = 768
         eng_emb = None
     stops = set(stopwords.words('english'))
@@ -453,7 +459,7 @@ def april_khodak():
 
     all_lemmas = create_all_lemmas(synsets, eng_emb)
     if USE_BERT:
-        all_lemmas_vecs = get_bert_embeddings(all_lemmas)
+        all_lemmas_vecs = get_bert_embeddings(list(all_lemmas.keys()))
     else:
         all_lemmas_vecs = None
     X, Y = create_synset_dataset(

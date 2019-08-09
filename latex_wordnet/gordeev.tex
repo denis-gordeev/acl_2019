@@ -59,7 +59,7 @@
 
 \newcommand\BibTeX{B\textsc{ib}\TeX}
 
-\title{Zero-shot WordNet Construction using Cross-lingual Embeddings}
+\title{Automatic WordNet Construction using Cross-lingual Embeddings}
 
 \author{Denis Gordeev, Alexey Rey, Dmitry Shagarov
 	First Author \\
@@ -144,7 +144,7 @@ Joulin et al. in (\citeyear{joulin2018loss}) introduced a reformulation of CSLS 
 	\end{align*}
 
 Thus, RCSLS can be solved using manifold optimization tools \cite{boumal2014manopt}.
-\section{Experiments}
+\section{Proposed method}
 \begin{figure}
 	
 	\centering
@@ -154,7 +154,7 @@ Thus, RCSLS can be solved using manifold optimization tools \cite{boumal2014mano
 	\caption{t-SNE visualisation of WordNet synset SIF-embeddings}
 	\label{wordnet-pos}
 \end{figure}
-We reformulated the problem of synset finding as a binary classification problem. The task is to predict for the given (synset, lemma) pair whether they are related or not. As training/validation data we used English Princeton WordNet \cite{wordnet} provided by the NLTK package~\cite{nltk}. It contains 117'659 synsets. As positive examples we use (lemma, synset) pairs. As negative examples lemmas from other synsets with the same root are used (chicken.n.01 vs. chicken.n.02). We also added some random words because of scarcity of negative examples. There were also attempts at augmenting training data with the information from the Open Multilingual WordNet \cite{bond-wordnet}. For the final model we used only Finnish Open WordNet because it is 100\% full and allows to avoid implicit bias towards Indo-European languages used for testing.
+We reformulated the problem of synset finding as a binary classification problem. The task is to predict for the given (synset, lemma) pair whether they are related or not. As training/validation data we used English Princeton WordNet \cite{wordnet} provided by the NLTK package~\cite{nltk}. It contains 117'659 synsets. As positive examples we use (lemma, synset) pairs. As negative examples lemmas from other synsets with the same root are used (chicken.n.01 vs. chicken.n.02). We also added some random words because of scarcity of negative examples. There were also attempts at augmenting training data with synsets from from other languages besides English using the Open Multilingual WordNet \cite{Bond2012, bond-wordnet}. Unfortunately, only three models from the Open Multilingual WordNet contain 100\% of core Princeton WordNet word senses (5000 most popular synsets): the Finnish, the Chinese and the Croatian. In our experiments we used only Finnish Open WordNet because it is 100\% full and allows to avoid implicit bias towards Indo-European languages used for testing.
 
 	\begin{table}[!htbp]
 	\small
@@ -191,7 +191,7 @@ $$V_s = V_s - uu^TV_s$$
 
 For each lemma we used its embedding from the corresponding cross-lingual pre-trained model (\cite{muse} or \cite{joulin2018loss}) for the language.
 
-Each synset vector is also augmented with information about its part-of-speech and the synset number.
+Each synset embedding vector was augmented with a one-hot vector representing its part of speech and the synset number from the Princeton WordNet, empirically it was found that it provides a tiny boost to the final score.
 
 Predicting synset relations is not a trivial task even in a monolingual setting. A simple linear model is unlikely to help in this case as we failed to get any meaningful cluster representation for synsets using t-SNE (t-Distributed Stochastic Neighbor Embedding) \cite{tsne} (Fig. \ref{wordnet-pos}). Moreover, there is not much training data and models are prone to overfitting in such circumstances. Thus, we introduced an ensemble of 4 LightGBM-models (Gradient Boosting Machine) \cite{lgbm} and 4 dense 3-layered fully-connected neural networks with dropout as regularization \cite{dropout} (Fig. \ref{keras_model}). LightGBM is an efficient, fast and easy to use Gradient Boosting model \cite{natekin2013gradient}.
 
@@ -219,11 +219,11 @@ All models prediction probabilities were averaged. After that classes were infer
 	\label{keras_model}
 \end{figure}
 
-In our case parameters fine-tuning using half of test data for validation (and removing it from the final test dataset) not only did not bring any benefit to the final score, but even decreased it significantly (about 3 F1-score points).
+In our case parameters fine-tuning of the model classification threshold (e.g. the threshold to distinguish between two classes was not 0.5 but 0.42) using half of test data of the target language for validation (and removing it from the final test dataset) not only did not bring any benefit to the final score, but even decreased it significantly (about 3 F1-score points).
 
 We also attempted to fine tune input data using PCA (principal component analysis) and UMAP (Uniform Manifold Approximation and Projection) \cite{umap} but it did not provide any gains, and brought about worse results.
 
-For testing there were used two manually annotated datasets provided in the paper \cite{Khodak2017} for Russian and French languages respectively. Each dataset consists of 600 target language words from three parts of speech (nouns, verbs and adjectives). Each word has some true senses (synsets) and false ones (Table \ref{wordnet-test-data}). The original test procedure did not penalize models for synsets and words that they do not contain. In our case the RCSLS-model has full coverage of the dataset.
+For testing there were used two manually annotated datasets provided in the paper \cite{Khodak2017} for Russian and French languages respectively. Each dataset consists of 600 target language words from three parts of speech (nouns, verbs and adjectives). Each word has some true senses (synsets) and false ones (Table \ref{wordnet-test-data}). The original test procedure did not penalize models if some synsets were absent from the model and could not be predicted. In our case the RCSLS-model has the full coverage of the dataset, thus we were able to give predictions even for the rarest synsets.
 
 \begin{table*}[!htbp]
 	\small
@@ -249,7 +249,17 @@ For testing there were used two manually annotated datasets provided in the pape
 \section{WordNet construction}
 In line with previous works \cite{Vossen1998,tufis2006romanian} we extend an existing WordNet and match words from the target language to existing Princeton WordNet synsets. For this we use our ensemble model: for every word we predict its synsets.
 
-Despite being easy to train, WordNet construction imposes significant computational problems in our case because we need to compare each word from the vocabulary with every possible synset. Luckily it is possible to predict all synsets for one word in a single batch. However, to ease computation requirements we used several heuristics. 1) removed strings with punctuation besides the underscore symbol. 2) identified language using \cite{Joulin2016} for each string (FastText embeddings are noisy and contain a lot of samples from other languages).  All computations were vectorized. Also we produced synsets for several words at once in batches. Ensemble methods also are easy to parallelize using the multiprocessing realization in Python and using bufferized numpy-arrays allows to increase the batch size and avoid copying data \cite{gorelick2014high}.
+Despite being easy to train, WordNet construction imposes significant computational problems in our case because we need to compare each word from the vocabulary with every possible synset. Luckily matrix calculus and modern machine-learning frameworks allow us to predict all synsets for several words in a single batch. However, to ease computation requirements we used several heuristics. 1) removed strings with punctuation besides the underscore symbol. 2) identified language using \cite{Joulin2016} for each string (FastText embeddings are noisy and contain a lot of samples from other languages).  All computations were vectorized. Ensemble methods also are easy to parallelize using the multiprocessing realization in Python and using bufferized numpy-arrays allows to increase the batch size and avoid copying data \cite{gorelick2014high}.
+
+aaaaaaaaaaaaaaa
+
+aaaaaaaaaaaaaaa
+
+aaaaaaaaaaaaaaa
+
+aaaaaaaaaaaaaaa
+
+aaaaaaaaaaaaaaa
 
 Candidate synsets were preselected using a simple model with a low threshold (0.2). However, we still had to limit the size of our WordNets. That is why we publish automated WordNets for all collocations and most common 10000 lemmas for 44 languages. To increase the quality of the generated models it was decided to sacrifice recall for the sake of precision and we increased the model confidence threshold to 0.6.
 
@@ -346,46 +356,47 @@ Another problem with FastText MWE is that the model is trained using the Wikiped
 		& \multicolumn{1}{l}{Noun} & \multicolumn{1}{l}{66.0} & \multicolumn{1}{l}{\textbf{67.61}} \\
 		& \multicolumn{1}{l}{Verb} & \multicolumn{1}{l}{55.9} & \multicolumn{1}{l}{49.7} \\
 		& \multicolumn{1}{l}{Total} & \multicolumn{1}{l}{61.5} & \multicolumn{1}{l}{60.7} \\
-		
+		\hline		
 		\hline
-		\multirow{4}{*}{Ensemble model (SIF + Non-English data + RCSLS)}
+		\multirow{4}{*}{SIF + Non-English data + RCSLS}
 		& \multicolumn{1}{l}{Adj.} & \multicolumn{1}{l}{\textbf{62.8}} & \multicolumn{1}{l}{\textbf{65.0}} \\
 		& \multicolumn{1}{l}{Noun} & \multicolumn{1}{l}{\textbf{71.8}} & \multicolumn{1}{l}{65.1} \\
 		& \multicolumn{1}{l}{Verb} & \multicolumn{1}{l}{60.0} & \multicolumn{1}{l}{\textbf{54.8}} \\
 		& \multicolumn{1}{l}{Total} & \multicolumn{1}{l}{\textbf{64.1}} & \multicolumn{1}{l}{\textbf{61.0}} \\
 		
 		\hline
-		\multirow{4}{*}{Ensemble model (SIF + \textbf{Only-English} data + RCSLS)}
+		\multirow{4}{*}{SIF + \textbf{Only-English} data + RCSLS}
 		& \multicolumn{1}{l}{Adj.} & \multicolumn{1}{l}{62.3} & \multicolumn{1}{l}{64.6} \\
 		& \multicolumn{1}{l}{Noun} & \multicolumn{1}{l}{70.9} & \multicolumn{1}{l}{63.6} \\
 		& \multicolumn{1}{l}{Verb} & \multicolumn{1}{l}{\textbf{60.3}} & \multicolumn{1}{l}{53.6} \\
 		& \multicolumn{1}{l}{Total} & \multicolumn{1}{l}{63.9} & \multicolumn{1}{l}{60.1} \\
 		\hline
-		\multirow{4}{*}{Ensemble model (SIF + Non-English data + \textbf{MUSE})}
+		\multirow{4}{*}{SIF + Non-English data + \textbf{MUSE}}
 		& \multicolumn{1}{l}{Adj.} & \multicolumn{1}{l}{61.0} & \multicolumn{1}{l}{64.8} \\
 		& \multicolumn{1}{l}{Noun} & \multicolumn{1}{l}{71.3} & \multicolumn{1}{l}{64.1} \\
 		& \multicolumn{1}{l}{Verb} & \multicolumn{1}{l}{59.0} & \multicolumn{1}{l}{54.3} \\
 		& \multicolumn{1}{l}{Total} & \multicolumn{1}{l}{63.9} & \multicolumn{1}{l}{60.5} \\
 		\hline
-		\multirow{4}{*}{Ensemble model (\textbf{TFIDF} + Non-English data + RCSLS)}
+		\multirow{4}{*}{\textbf{TFIDF} + Non-English data + RCSLS}
 		& \multicolumn{1}{l}{Adj.} & \multicolumn{1}{l}{62.3} & \multicolumn{1}{l}{63.0} \\
 		& \multicolumn{1}{l}{Noun} & \multicolumn{1}{l}{68.1} & \multicolumn{1}{l}{59.5} \\
 		& \multicolumn{1}{l}{Verb} & \multicolumn{1}{l}{53.9} & \multicolumn{1}{l}{48.0} \\
 		& \multicolumn{1}{l}{Total} & \multicolumn{1}{l}{60.7} & \multicolumn{1}{l}{56.5} \\
 		\hline
-		\multirow{4}{*}{Single \textbf{LGBM}-model (SIF + Non-English data + RCSLS)}
+\iffalse
+		\multirow{4}{*}{Our: Single \textbf{LGBM}-model (SIF + Non-English data + RCSLS)}
 		& \multicolumn{1}{l}{Adj.} & \multicolumn{1}{l}{59.4} & \multicolumn{1}{l}{61.4} \\
 		& \multicolumn{1}{l}{Noun} & \multicolumn{1}{l}{69.2} & \multicolumn{1}{l}{63.4} \\
 		& \multicolumn{1}{l}{Verb} & \multicolumn{1}{l}{57.5} & \multicolumn{1}{l}{49.2} \\
 		& \multicolumn{1}{l}{Total} & \multicolumn{1}{l}{61.3} & \multicolumn{1}{l}{57.0} \\
 		
 		\hline
-		\multirow{4}{*}{Single \textbf{NN}-model (SIF + Non-English data + RCSLS)}
+		\multirow{4}{*}{Our: Single \textbf{NN}-model (SIF + Non-English data + RCSLS)}
 		& \multicolumn{1}{l}{Adj.} & \multicolumn{1}{l}{60.5} & \multicolumn{1}{l}{62.9} \\
 		& \multicolumn{1}{l}{Noun} & \multicolumn{1}{l}{69.5} & \multicolumn{1}{l}{62.5} \\
 		& \multicolumn{1}{l}{Verb} & \multicolumn{1}{l}{56.3} & \multicolumn{1}{l}{51.1} \\
 		& \multicolumn{1}{l}{Total} & \multicolumn{1}{l}{61.1} & \multicolumn{1}{l}{58.5} \\
-		
+\fi
 	\end{tabular}
 	
 \end{table*}
@@ -398,7 +409,7 @@ The SIF embedding scheme provides an advantage of ~3.5 F1-score points in compar
 
 MUSE-embeddings perform slightly worse than RCSLS. However, it should also be noted that the vocabulary for MUSE embeddings is only 200'000 words vs ~ 2'000'000 for RCSLS. This should not have substantially influenced test results because of the chosen test procedure.
 
-Ensembling gives a major performance boost. However, it may be partially attributed to out lack of investment into fine-tuning of individual models. Individual models are also almost as performant for French as previous multi-stepped procedures that used translation engines and clustering. However, they fail for Russian which can be attributed to overfitting to the original English dataset. Simple averaging between models helps to mitigate it.
+Ensembling gives a major performance boost. However, it may be partially attributed to our lack of investment into fine-tuning of individual models. Individual models are also almost as performant for French as previous multi-stepped procedures that used translation engines and clustering. However, they fail for Russian which can be attributed to overfitting to the original English dataset. Simple averaging between models helps to mitigate it.
 
 \section{Conclusion}
 
