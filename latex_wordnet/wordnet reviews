@@ -1,0 +1,272 @@
+============================================================================ 
+MWE-WN 2019 Reviews for Submission #26
+============================================================================ 
+
+Title: Zero-shot WordNet Construction using Cross-lingual Embeddings
+Authors: Denis Gordeev, Alexey Rey and Dmitry Shagarov
+============================================================================
+                            REVIEWER #1
+============================================================================
+
+---------------------------------------------------------------------------
+Reviewer's Scores
+---------------------------------------------------------------------------
+Relevance to the research track (MWEs and WordNets, MWEs only) (1-5): 5
+
+Paper summary:
+---------------------------------------------------------------------------
+Automatic multilingual WordNet construction
+---------------------------------------------------------------------------
+
+
+Reasons to accept
+---------------------------------------------------------------------------
+It helps constructing multilingual WordNets automatically with little manual labor.
+---------------------------------------------------------------------------
+
+
+Reasons to reject
+---------------------------------------------------------------------------
+It is written and structured very poorly.
+---------------------------------------------------------------------------
+
+
+---------------------------------------------------------------------------
+Reviewer's Scores
+---------------------------------------------------------------------------
+                    Recommendation (1-5): 3
+
+Detailed Comments
+---------------------------------------------------------------------------
+The proposed method is simple and effective due 28399686to cross-lingual embeddings,
+though the idea of using cross-lingual embeddings to dispense with machine translation
+or parallel corpora might not be really innovative given the previous works such as
+Conneau et al. (2017).
+
+I am maconcerned with the presentation of the paper. First of all, I could not fully
+understand important details of the proposed method and the experiments.
+I give you some (not all) of those unclear descriptions in the paper below.
+
+	P.3:
+
+	1. For the final model we used only Finnish Open WordNet because it is 100% full and ...
+	--> What is the final model in this context? Is there any intermediate model?
+	What do you mean by 100% full? What is it full of?
+
+	2. Each synset vector is also augmented with information about its part-of-speech
+	and the synset number.
+	--> How did you augment vectors with POS and synset numbers precisely?
+	Why did you do it first of all?
+
+	P.4:
+
+	3. In our case parameters fine-tuning not only did not bring any benefit
+	to the final score, but even decreased it significantly.
+	--> What fine-tuning did you do?
+
+	4. The original test procedure did not penalize models for synsets and words
+	that they do not contain.
+	--> What is the original test procedure? What penalty did you impose?
+
+	5. Luckily it is possible to predict all synsets for one word in a single batch.
+	--> How is it possible?
+
+	6. Also we produced synsets for several words at once in batches.
+	--> Did you create new synsets that did not exist in Princeton WordNet? Why?
+	In the beginning of Section 4, you described your task as matching words
+	from target languages to existing Princeton WordNet synsets.
+
+	Below are some additional comments on the presentation.
+
+	P.1:
+
+	7. It is a bit weird not to mention "zero-shot" in the body text
+	even though the title starts with the word.
+
+	8. Is the task of the current paper really a zero-shot learning?
+	I think the zero-shot learning is concerned with the case where the classes
+	covered by training instances and the classes you aim to classify are disjoint.
+	In the case of the current paper, the classes are not disjoint; they are
+	Princeton WordNet synsets in both training and testing phases.
+
+9. I suggest being more explicit on the difference from Khodak et al. (2017)
+because it is highly relevant.
+
+	P.3:
+
+	10. I think Section 3 should be titled something like "Proposed Method"
+	rather than "Experiments".
+
+	On top of the above presentation issues, I am also concerned about the
+	experimental results in Table 5. Are the differences statistically significant?
+	For example, the best total F1 (64.1) is very close to the second best (63.9)
+	in the French setting. The best and second best F1 scores in the Russian setting
+	are also quite close.
+
+Although it is great to provide supplementary code and data, it is desirable 
+to provide README texts as well. I could not figure out how to use them.
+---------------------------------------------------------------------------
+
+
+
+============================================================================
+                            REVIEWER #2
+============================================================================
+
+---------------------------------------------------------------------------
+Reviewer's Scores
+---------------------------------------------------------------------------
+Relevance to the research track (MWEs and WordNets, MWEs only) (1-5): 5
+
+Paper summary:
+---------------------------------------------------------------------------
+They suggested the way to construct wordnet using cross lingual embeddings like MUSE or RCSLS, Also SIF and TFIDF is used  for definition embeddings, too.
+A combination of some models is also used for neural network process.
+They tried to match words from the target language to existing Princeton Wordnet synsets using ensemble models and predicted its synsets for every word including Multiword expressions.
+Finally, they showed some experimental results for wordnet-synset prediction.
+---------------------------------------------------------------------------
+
+
+Reasons to accept
+---------------------------------------------------------------------------
+Their method would be useful for Low-resource languages.
+---------------------------------------------------------------------------
+
+
+Reasons to reject
+---------------------------------------------------------------------------
+none
+---------------------------------------------------------------------------
+
+
+---------------------------------------------------------------------------
+Reviewer's Scores
+---------------------------------------------------------------------------
+                    Recommendation (1-5): 4
+
+Detailed Comments
+---------------------------------------------------------------------------
+This paper is a solid paper with good research.
+Though evaluation scores are not so good, their experiment seems to be fruitful because their method would be useful for Low-resource languages.
+I have a few questions about multiword expressions.
+Are MWEs automatically extracted?
+If so, though your paper reported some problems, how did you deal with MWEs?
+That is, after automatic extraction, did you choose MWEs which is seemed to be good?
+Or did you use MWEs whose values were more than a threshold value?
+Or did you use all of MWEs that you obtained?
+I'd like to know whether MWEs are adequately mapped to synsets or not.
+---------------------------------------------------------------------------
+
+
+
+============================================================================
+                            REVIEWER #3
+============================================================================
+
+---------------------------------------------------------------------------
+Reviewer's Scores
+---------------------------------------------------------------------------
+Relevance to the research track (MWEs and WordNets, MWEs only) (1-5): 5
+
+Paper summary:
+---------------------------------------------------------------------------
+This paper presents a method of automatically constructing a wordnet using cross-lingual embeddings. This paper is based on the method used by many other authors of using the extend approach, where no change is made to the semantic model but instead the synsets are translated into a new language. The main contribution of this work is the use of word embeddings in order to achieve this work instead of machine translation and the authors show improvement over the state-of-the-art
+---------------------------------------------------------------------------
+
+
+Reasons to accept
+---------------------------------------------------------------------------
+Extending wordnets to new languages is an interesting and valid goal and this method is new and interesting.
+---------------------------------------------------------------------------
+
+
+Reasons to reject
+---------------------------------------------------------------------------
+The quality of this system is principally evaluated in comparison to machine translation.
+It is not very clear whether this baseline is valid, as the machine translation system used is not given nor or the parameters of the machine translation system (i.e., did they train themselves or is it a commercial system)?
+I also miss a comparison to the SotA approach for using machine translation proposed by Arcan et al.
+---------------------------------------------------------------------------
+
+
+---------------------------------------------------------------------------
+Reviewer's Scores
+---------------------------------------------------------------------------
+                    Recommendation (1-5): 4
+
+Detailed Comments
+---------------------------------------------------------------------------
+The paper is generally good and well-written, although I get a bit lost in the methodology, in particularly it is not clear exactly how the embedding system in Section 3 is really used for constructing the wordnet in Section 4.
+I think more detail in this method would be very helpful. 
+
+It seems the authors are unaware of Arcan's work, and I think the comparison would be very useful:
+
+Linking Knowledge Graphs across Languages with Semantic Similarity and Machine Translation. John P. McCrae, Mihael Arcan and Paul Buitleaar, Proceedings of the First Workshop on Multi-Language Processing in a Globalising World (MLP2017), (2017).
+Improving Wordnets for Under-Resourced Languages Using Machine Translation information. Bharathi Raja Chakravarthi, Mihael Arcan and John P. McCrae, Proceedings of the 9th Global WordNet Conference, (2018).
+
+Minor issues:
+The authors often use apostrophes to separate thousands that is not normal in English. e.g., 100'000 should be 100,000
+Be careful with LaTeX quotes, `take notes', `take away'
+"attributed to out lack" should be "our"
+---------------------------------------------------------------------------
+
+
+
+============================================================================
+                            REVIEWER #4
+============================================================================
+
+---------------------------------------------------------------------------
+Reviewer's Scores
+---------------------------------------------------------------------------
+Relevance to the research track (MWEs and WordNets, MWEs only) (1-5): 5
+
+Paper summary:
+---------------------------------------------------------------------------
+The paper presents a method for automatic construction of wordnet-like semantic taxonomy in non-English languages based on English WordNet and cross-lingual embeddings.
+---------------------------------------------------------------------------
+
+
+Reasons to accept
+---------------------------------------------------------------------------
+There have been several attempts to solve this task, mostly based on translation approaches. This is a rather novel way potentially interesting for other researcher.
+---------------------------------------------------------------------------
+
+
+Reasons to reject
+---------------------------------------------------------------------------
+From the technical poin of view, the description of the method and results is not very strong. Some details are missing or are unclear. The results are not ground-breaking, rather incremental or even unconvincing.
+---------------------------------------------------------------------------
+
+
+---------------------------------------------------------------------------
+Reviewer's Scores
+---------------------------------------------------------------------------
+                    Recommendation (1-5): 3
+
+Detailed Comments
+---------------------------------------------------------------------------
+The authors don't explain how exactly the task is evaluated.  What exactly are the F1 scores presented in Table 5? How do the relate to accuracy mentioned on lines 084-089?    
+
+Many details important for reproducibility are missing, e.g. how manz negative examples were used to train the models (line 228), how the random words (line 230) were used and where they were sampled from? How many? 
+
+	How the POS augmentation of synsets (line 276) was done?
+What the authors mean by this sentece (lines 284-286) "Moreover, there is not much training data and models are prone to overfitting in such circumstances".
+Training data for what? What kind of overfitting? 
+
+How the classification threshold was computed on the validation set (ine 316)?
+Why was the threshold changed then (line 423) and how did it affect the results?
+
+	How the Finnish WordNet was used and what is means that it is "100% full" (line 235)?
+
+The candidate preselection is not clear too (line 393).
+How exactl it was done?
+How did it speed up the process, and how was the effect on the results?
+
+The part about multiword expressions is not clear. This terms is mixed with the term collocations and not explained. The result are not evaluated.
+
+Table 3 is not clear. Needs explanation.
+
+The resutls are not very convincing. The improvemens rather small not tested for stat. significance.
+---------------------------------------------------------------------------
+
+

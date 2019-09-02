@@ -238,9 +238,9 @@ def sif_embeddings(emb, sentences: dict):
     return embedding
 
 
-def get_f1s(range, divisor, model, x_test, y_test):
+def get_f1s(th_range, divisor, model, x_test, y_test):
     threshold = []
-    for t in range:
+    for t in th_range:
         print(f"threshold {t: 10}", end="\r")
         f1 = [f1_score(y_test,
                        predict_binary(model, x_test, threshold=t / divisor))]
@@ -337,12 +337,12 @@ def get_bert_embeddings(sentences: List[str]):
 
 
 def april_khodak():
-    USE_BERT = True
+    USE_BERT = False
     USE_FOREIGN = False
     ADD_ZEROES = True
     USE_KFOLD = False
     TFIDF = False
-    USE_SIF = False
+    USE_SIF = True
     USE_MUSE = False
     POS_LIMIT = None
     USE_PCA = False
