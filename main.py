@@ -25,6 +25,7 @@ from sklearn.metrics import f1_score
 from sklearn.model_selection import KFold
 from sklearn.manifold import TSNE
 # from sklearn.model_selection import RepeatedStratifiedKFold
+from conllu import parse as conllu_parse
 
 import wget
 from bert_serving.client import BertClient
@@ -338,9 +339,9 @@ def get_bert_embeddings(sentences: List[str]):
 
 def april_khodak():
     USE_BERT = False
-    USE_FOREIGN = False
+    USE_FOREIGN = True
     ADD_ZEROES = True
-    USE_KFOLD = False
+    USE_KFOLD = True
     TFIDF = False
     USE_SIF = True
     USE_MUSE = False
@@ -618,6 +619,121 @@ def save_ensemble(ensemble, folder="models"):
             pickle.dump(m, open(f"{folder}/__lgbm_{m_i}", "wb"))
 
 
+class UDPipeModel:
+    def __init__(self, path):
+        """Load given model."""
+        self.model = ufal.udpipe.Model.load(path)
+        if not self.model:
+            raise Exception("Cannot load UDPipe model from file '%s'" % path)
+
+    def tokenize(self, text):
+        """Tokenize the text and return list of ufal.udpipe.Sentence-s."""
+        tokenizer = self.model.newTokenizer(self.model.DEFAULT)
+        if not tokenizer:
+            raise Exception("The model does not have a tokenizer")
+        return self._read(text, tokenizer)
+
+    def read(self, text, in_format):
+        """Load text in the given format (conllu|horizontal|vertical) and
+           return list of ufal.udpipe.Sentence-s."""
+        input_format = ufal.udpipe.InputFormat.newInputFormat(in_format)
+        if not input_format:
+            raise Exception("Cannot create input format '%s'" % in_format)
+        return self._read(text, input_format)
+
+    def _read(self, text, input_format):
+        input_format.setText(text)
+        error = ufal.udpipe.ProcessingError()
+        sentences = []
+
+        sentence = ufal.udpipe.Sentence()
+        while input_format.nextSentence(sentence, error):
+            sentences.append(sentence)
+            sentence = ufal.udpipe.Sentence()
+        if error.occurred():
+            raise Exception(error.message)
+
+        return sentences
+
+    def tag(self, sentence):
+        """Tag the given ufal.udpipe.Sentence (inplace)."""
+        self.model.tag(sentence, self.model.DEFAULT)
+
+    def parse(self, sentence):
+        """Parse the given ufal.udpipe.Sentence (inplace)."""
+        self.model.parse(sentence, self.model.DEFAULT)
+
+    def write(self, sentences, out_format='conllu'):
+        """Write given ufal.udpipe.Sentence-s in the required format
+           (conllu|horizontal|vertical)."""
+
+        output_format = ufal.udpipe.OutputFormat.newOutputFormat(out_format)
+        output = ''
+        for sentence in sentences:
+            output += output_format.writeSentence(sentence)
+        output += output_format.finishDocument()
+
+        return output
+
+
+def udpipe_pipe(lang: str, dataset: list) -> list:
+    udpipe_folder = "udpipe/udpipe-ud-2.4-190531/"
+    udpipe_models = {
+        'af': "afrikaans-afribooms-ud-2.4-190531.udpipe",
+        'ar': "arabic-padt-ud-2.4-190531.udpipe",
+        'bg': "bulgarian-btb-ud-2.4-190531.udpipe",
+        'ca': "catalan-ancora-ud-2.4-190531.udpipe",
+        'cs': "czech-cac-ud-2.4-190531.udpipe",
+        'da': "danish-ddt-ud-2.4-190531.udpipe",
+        'de': "german-gsd-ud-2.4-190531.udpipe",
+        'el': "greek-gdt-ud-2.4-190531.udpipe",
+        'en': "english-ewt-ud-2.4-190531.udpipe",
+        'es': "spanish-gsd-ud-2.4-190531.udpipe",
+        'et': "estonian-edt-ud-2.4-190531.udpipe",
+        'fa': "persian-seraji-ud-2.4-190531.udpipe",
+        'fi': "finnish-ftb-ud-2.4-190531.udpipe",
+        'fr': "french-gsd-ud-2.4-190531.udpipe",
+        'he': "hebrew-htb-ud-2.4-190531.udpipe",
+        'hi': "hindi-hdtb-ud-2.4-190531.udpipe",
+        'hr': "croatian-set-ud-2.4-190531.udpipe",
+        'hu': "hungarian-szeged-ud-2.4-190531.udpipe",
+        'id': "indonesian-gsd-ud-2.4-190531.udpipe",
+        'it': "italian-isdt-ud-2.4-190531.udpipe",
+        'ko': "korean-gsd-ud-2.4-190531.udpipe",
+        'lt': "lithuanian-alksnis-ud-2.4-190531.udpipe",
+        'lv': "latvian-lvtb-ud-2.4-190531.udpipe",
+        'nl': "dutch-alpino-ud-2.4-190531.udpipe",
+        'no': "norwegian-bokmaal-ud-2.4-190531.udpipe",
+        'pl': "polish-lfg-ud-2.4-190531.udpipe",
+        'pt': "portuguese-gsd-ud-2.4-190531.udpipe",
+        'ro': "romanian-rrt-ud-2.4-190531.udpipe",
+        'ru': "russian-syntagrus-ud-2.4-190531.udpipe",
+        'sk': "slovak-snk-ud-2.4-190531.udpipe",
+        'sl': "slovenian-ssj-ud-2.4-190531.udpipe",
+        'sv': "swedish-talbanken-ud-2.4-190531.udpipe",
+        'ta': "tamil-ttb-ud-2.4-190531.udpipe",
+        'tr': "turkish-imst-ud-2.4-190531.udpipe",
+        'uk': "ukrainian-iu-ud-2.4-190531.udpipe",
+        'vi': "vietnamese-vtb-ud-2.4-190531.udpipe",
+        'zh': "chinese-gsd-ud-2.4-190531.udpipe",
+    }
+    if lang not in udpipe_models:
+        return dataset
+    u_model = UDPipeModel(udpipe_folder + udpipe_models[lang])
+    for w_i, w in enumerate(dataset):
+        if w_i % 10000 == 0:
+            print("\t", len(dataset) - w_i)
+        sentences = u_model.tokenize(w)
+        for s in sentences:
+            u_model.tag(s)
+            # u_model.parse(s)
+        conllu = u_model.write(sentences)
+        lemma = conllu.split("\n")[4].split("\t")[2]
+        dataset[w_i] = lemma
+    dataset = list(set(dataset))
+    return dataset
+
+
 def create_wordnets():
     version = 2
     langs = ['af', 'ar', 'bg', 'bn', 'bs', 'ca', 'cs', 'da', 'de', 'el', 'en',
@@ -626,19 +742,20 @@ def create_wordnets():
              'sk', 'sl', 'sq', 'sv', 'ta', 'th', 'tl', 'tr', 'uk', 'vi', 'zh']
     punct = punctuation.replace("_", "")
     punct += "\xa0—„…»゛–"
-    ensemble = pickle.load(open("models/best2/ensemble.pcl", "rb"))
+    ensemble = pickle.load(open("september2019_models/ensemble.pcl", "rb"))
     nn_model = ensemble.models[4]
-
-    with open("synsets/synset_index.json") as f:
+    with open("combo_models.json") as f:
+        lemma_models = json.load(f)
+    with open("september2019_models/synset_index.json") as f:
         r = f.read()
         synset_index = json.loads(r)
     reverse_index = {v: k for k, v in synset_index.items()}
     syn_pos = [get_synset_pos(s) for s in synset_index.keys()]
-
+    syn_pos = np.array(syn_pos)
     meaning = [[int(s.split(".")[-1]) / 60]
                for s in synset_index.keys()]
 
-    synset_mtx = np.load('synsets/synset_mtx.npy')
+    synset_mtx = np.load('september2019_models/synset_mtx.npy')
     synset_mtx = np.concatenate([synset_mtx, syn_pos, meaning], axis=1)
     synset_zeros = np.zeros(shape=(synset_mtx.shape[0],
                                    300 + synset_mtx.shape[1])
@@ -673,6 +790,9 @@ def create_wordnets():
                          if not any(p in w for p in punct)]
         allowed_vocab = list(allowed_vocab)
 
+        allowed_vocab = [w.replace("_", " ") for w in allowed_vocab]
+        allowed_vocab = [w.strip() for w in allowed_vocab]
+        allowed_vocab = list(set(allowed_vocab))
         langs = lang_model.predict(allowed_vocab)
         langs = langs[0]
         langs = [l[0].replace("__label__", "") for l in langs]
@@ -682,12 +802,42 @@ def create_wordnets():
         # 1037102
         allowed_vocab = [w for w in allowed_vocab if len(w) >= 3]
         print("final allowed vocab len", len(allowed_vocab))
-        collocations = [w for w in allowed_vocab if "_" in w and
-                        len([l for l in w.split("_") if l]) > 1]
+        collocations = [w for w in allowed_vocab if " " in w and
+                        len([l for l in w.split(" ") if l and len(l) > 1]) > 1]
         print("collocations len", len(collocations))
+
+        allowed_vocab = udpipe_pipe(lang, allowed_vocab)
+        allowed_vocab = set(allowed_vocab).intersection(set(lang_emb.vocab))
+        allowed_vocab = list(allowed_vocab)
+        allowed_vocab = [w for w in allowed_vocab if len(w) >= 3]
+        # https://github.com/hermitdave/FrequencyWords/
+        frequency_folder = f"FrequencyWords/content/2018/{lang}"
+        if os.path.exists(frequency_folder):
+            with open(f"{frequency_folder}/{lang}_50k.txt") as freq_f:
+                frequency_list = freq_f.readlines()
+            frequency_dict = dict([w.split() for w in frequency_list])
+            allowed_vocab = set(allowed_vocab).intersection(
+                set(frequency_dict.keys()))
+
+            allowed_vocab_len = 0
+            new_allowed_vocab = []
+            # most popular 5000 words
+            for key_i, key in enumerate(frequency_dict):
+                # O(N) search =(
+                # allowed_vocab is a set
+                if key in allowed_vocab:
+                    new_allowed_vocab.append(key)
+                    allowed_vocab_len += 1
+                if allowed_vocab_len >= 5000:
+                    break
+            allowed_vocab = new_allowed_vocab
+        allowed_vocab = list(allowed_vocab)
+        allowed_vocab = allowed_vocab[:5000]
         for dataset_i, dataset in enumerate([allowed_vocab, collocations]):
             coloc = "colocations" if dataset_i == 1 else "all"
             f_lang_name = f"wordnets_constructed/{coloc}_{lang}_{version}"
+
+            # check last processed word
             if os.path.exists(f_lang_name):
                 with open(f_lang_name) as f:
                     processed = f.readlines()
@@ -704,6 +854,8 @@ def create_wordnets():
 
             for v_i, v in enumerate(dataset):
                 print(f"{v_i:<5} {v:<20}", end="\r")
+
+                # process only first 10000 words
                 if v_i + last_processed > 10000:
                     break
                 emb_v = lang_emb[v]
@@ -714,14 +866,14 @@ def create_wordnets():
 
                 selected_preds = np.where(prelim_preds > 0.1)[0]
                 preds_len = selected_preds.shape[0]
-
+                synset_mtx[preds_len]
                 if preds_len >= batch_mtx_len - last_batch_ind or\
                         v_i == len(dataset) - 1:
                     # then predict the batch and reset it
                     preds = predict_binary(ensemble,
                                            # to save processor time (doubtful?)
                                            batch_mtx[:last_batch_ind],
-                                           threshold=0.6)
+                                           threshold=0.42)
                     synsets = np.where(preds == 1)[0]
                     for batch_k, batch_v in batch_dict.items():
                         batch_synsets = []
@@ -734,8 +886,8 @@ def create_wordnets():
                             else:
                                 synsets = synsets[s_i:]
                                 break
-                        if len(batch_synsets) > 10:
-                            continue
+                        # if len(batch_synsets) > 10:
+                        #     continue
                         batch_synsets = [
                             reverse_index[s] for s in batch_synsets]
                         for s in batch_synsets:
