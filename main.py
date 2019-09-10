@@ -28,6 +28,7 @@ from sklearn.manifold import TSNE
 from conllu import parse as conllu_parse
 
 import wget
+import ufal.udpipe
 from bert_serving.client import BertClient
 
 from utils import load_embeddings, train_gbm
@@ -175,6 +176,19 @@ def create_synset_dataset(synsets, syn_names, all_lemmas, syn_mtx,
                             all_lemmas_vecs=all_lemmas_vecs)
                         X.append(vector)
                         Y.append(0)
+            if emb and name in emb:
+                negatives = list(emb.most_similar(name, topn=30))[20:30]
+                negatives = [n[0] for n in negatives]
+                negatives = [n for n in negatives if name not in n and not
+                             any(l in n for l in name_lemmas) and not
+                             any(n in l for l in name_lemmas)]
+                for nega in negatives:
+                    negatives = list(emb.most_similar(name, topn=30))[20:30]
+                    negatives = [n[0] for n in negatives]
+                    negatives = [n for n in negatives if name not in n and not
+                                 any(l in n for l in name_lemmas) and not
+                                 any(n in l for l in name_lemmas)]
+
     return X, Y
 
 
@@ -362,8 +376,8 @@ def april_khodak():
     stops = set(stopwords.words('english'))
     # get synsets + their lemmas
     # 117659 synsets
-    synsets = {w.name(): [l.name().lower().replace(".", "")
-                          for l in w.lemmas()]
+    synsets = {w.name(): [l.lower()
+                          for l in w.lemma_names()]
                for w in wordnet.all_synsets()}
     synsets = {k: v for k, v in synsets.items() if v}
     # synsets = {k: [w for w in v if w in eng_emb] for k, v in synsets.items()}
@@ -579,7 +593,6 @@ def april_khodak():
                 f1 = f1_score(target, preds)
                 f1_scores.append([f1, pos, "avg", ensemble_threshold])
             else:
-
                 gbm_preds = gbm.predict(input_data)
                 nn_preds = nn_model.predict(input_data).T[0]
                 avg_preds = np.mean([gbm_preds, nn_preds], axis=0)
@@ -734,6 +747,30 @@ def udpipe_pipe(lang: str, dataset: list) -> list:
     return dataset
 
 
+def most_frequent_only(lang, allowed_vocab):
+    frequency_folder = f"FrequencyWords/content/2018/{lang}"
+    if os.path.exists(frequency_folder):
+        with open(f"{frequency_folder}/{lang}_50k.txt") as freq_f:
+            frequency_list = freq_f.readlines()
+        frequency_dict = dict([w.split() for w in frequency_list])
+        allowed_vocab = set(allowed_vocab).intersection(
+            set(frequency_dict.keys()))
+
+        allowed_vocab_len = 0
+        new_allowed_vocab = []
+        # most popular 5000 words
+        for key_i, key in enumerate(frequency_dict):
+            # O(N) search =(
+            # allowed_vocab is a set
+            if key in allowed_vocab:
+                new_allowed_vocab.append(key)
+                allowed_vocab_len += 1
+            if allowed_vocab_len >= 5000:
+                break
+        allowed_vocab = new_allowed_vocab
+    return allowed_vocab
+
+
 def create_wordnets():
     version = 2
     langs = ['af', 'ar', 'bg', 'bn', 'bs', 'ca', 'cs', 'da', 'de', 'el', 'en',
@@ -780,7 +817,7 @@ def create_wordnets():
         new_filename = f"muse_embeddings/{filename}"
         os.rename(filename, new_filename)
         lang_emb = load_embeddings(lang, muse=False)
-        if lang not in ("ru", "fr", "en"):
+        if lang not in ("ru", "fr", "en", "fi"):
             os.remove(new_filename)
         # 1888418
         allowed_vocab = lang_emb.vocab
@@ -811,28 +848,9 @@ def create_wordnets():
         allowed_vocab = list(allowed_vocab)
         allowed_vocab = [w for w in allowed_vocab if len(w) >= 3]
         # https://github.com/hermitdave/FrequencyWords/
-        frequency_folder = f"FrequencyWords/content/2018/{lang}"
-        if os.path.exists(frequency_folder):
-            with open(f"{frequency_folder}/{lang}_50k.txt") as freq_f:
-                frequency_list = freq_f.readlines()
-            frequency_dict = dict([w.split() for w in frequency_list])
-            allowed_vocab = set(allowed_vocab).intersection(
-                set(frequency_dict.keys()))
-
-            allowed_vocab_len = 0
-            new_allowed_vocab = []
-            # most popular 5000 words
-            for key_i, key in enumerate(frequency_dict):
-                # O(N) search =(
-                # allowed_vocab is a set
-                if key in allowed_vocab:
-                    new_allowed_vocab.append(key)
-                    allowed_vocab_len += 1
-                if allowed_vocab_len >= 5000:
-                    break
-            allowed_vocab = new_allowed_vocab
+        allowed_vocab = most_frequent_only(lang, allowed_vocab)
         allowed_vocab = list(allowed_vocab)
-        allowed_vocab = allowed_vocab[:5000]
+        allowed_vocab = allowed_vocab[99:5000]
         for dataset_i, dataset in enumerate([allowed_vocab, collocations]):
             coloc = "colocations" if dataset_i == 1 else "all"
             f_lang_name = f"wordnets_constructed/{coloc}_{lang}_{version}"
@@ -856,7 +874,7 @@ def create_wordnets():
                 print(f"{v_i:<5} {v:<20}", end="\r")
 
                 # process only first 10000 words
-                if v_i + last_processed > 10000:
+                if v_i + last_processed > 5000:
                     break
                 emb_v = lang_emb[v]
                 synset_mtx[:, :300] = emb_v
@@ -866,22 +884,33 @@ def create_wordnets():
 
                 selected_preds = np.where(prelim_preds > 0.1)[0]
                 preds_len = selected_preds.shape[0]
-                synset_mtx[preds_len]
+                # synset_mtx[preds_len]
                 if preds_len >= batch_mtx_len - last_batch_ind or\
                         v_i == len(dataset) - 1:
+
                     # then predict the batch and reset it
-                    preds = predict_binary(ensemble,
-                                           # to save processor time (doubtful?)
-                                           batch_mtx[:last_batch_ind],
-                                           threshold=0.42)
-                    synsets = np.where(preds == 1)[0]
+                    # preds = predict_binary(ensemble,
+                    #                        # to save processor time
+                    #                        # (doubtful?)
+                    #                        batch_mtx[:last_batch_ind],
+                    #                        threshold=0.42)
+                    threshold = 0.42
+                    logits = ensemble.predict(batch_mtx[:last_batch_ind])
+                    # logits = logits[0]
+                    preds = np.where(logits > threshold)[0]
+                    logits = logits[preds]
+                    # synsets = np.where(preds == 1)[0]
+                    synsets = preds
+
+                    synsets_counter = Counter()
+                    all_synsets = dict()
                     for batch_k, batch_v in batch_dict.items():
                         batch_synsets = []
                         low_lim, up_lim = batch_v[:2]
                         for s_i, s in enumerate(synsets):
                             if low_lim <= s < up_lim:
                                 s -= low_lim
-                                batch_synsets.append(s)
+                                batch_synsets.append([s, logits[s_i]])
                             # the lower limit is always respected
                             else:
                                 synsets = synsets[s_i:]
@@ -889,10 +918,17 @@ def create_wordnets():
                         # if len(batch_synsets) > 10:
                         #     continue
                         batch_synsets = [
-                            reverse_index[s] for s in batch_synsets]
+                            [reverse_index[s[0]],
+                             s[1]]
+                            for s in batch_synsets]
+                        all_synsets[batch_k] = batch_synsets
                         for s in batch_synsets:
+                            word = s[0]
+                            score = s[1]
+                            synsets_counter[word] += 1
                             print(batch_k, s)
-                            f_lang.write("{}\t{}\n".format(batch_k, s))
+                            f_lang.write("{}\t{}\t{}\n".format(batch_k,
+                                                               s[0], s[1]))
                     # reset the batch
                     last_batch_ind = 0
                     batch_dict = dict()
